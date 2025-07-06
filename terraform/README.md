@@ -1,88 +1,32 @@
-# GameDin L3 + AthenaMist AI AWS Infrastructure
+# GameDin L3 + AthenaMist AI Infrastructure
 
-This directory contains the Terraform configuration for deploying the complete GameDin L3 + AthenaMist AI ecosystem to AWS.
+This directory contains the Terraform infrastructure code for the GameDin L3 gaming blockchain ecosystem with integrated AthenaMist AI services.
 
 ## 🏗️ Architecture Overview
 
-The infrastructure is designed for high availability, scalability, and performance with the following components:
+The infrastructure is designed as a production-ready, scalable gaming platform with the following components:
 
 ### Core Infrastructure
-- **VPC** with public, private, and database subnets across multiple AZs
-- **EKS Cluster** with specialized node groups for gaming, AI, and general workloads
-- **RDS PostgreSQL** with Multi-AZ deployment and automated backups
+- **VPC** with public and private subnets across multiple AZs
+- **EKS Cluster** with specialized node groups for gaming and AI workloads
+- **RDS PostgreSQL** for persistent data storage
 - **ElastiCache Redis** for caching and session management
-- **Amazon MQ (RabbitMQ)** for message queuing
-- **Application Load Balancer** with SSL termination
-- **Route 53** for DNS management
-- **ACM** for SSL certificate management
+- **Amazon MQ** for message queuing
+- **Application Load Balancer** with WAF protection
+- **S3 Buckets** for static assets, logs, backups, and AI models
+- **Route53** for DNS management and SSL certificates
+- **CloudWatch** for comprehensive monitoring and alerting
 
-### Security & Monitoring
-- **CloudWatch** for logging and monitoring
-- **CloudTrail** for audit logging
-- **VPC Flow Logs** for network monitoring
-- **SNS** for alerting
-- **IAM** roles and policies with least privilege access
-- **KMS** for encryption at rest and in transit
+### AI Services
+- **NovaSanctum AI** for fraud detection and player analytics
+- **AthenaMist AI** for strategic analysis and game intelligence
+- **Unified AI Service** for orchestration and consensus
 
-### Application Stack
-- **API Gateway** - RESTful API service
-- **Gaming Engine** - Real-time gaming engine with WebSocket support
-- **AI Services** - NovaSanctum and AthenaMist AI integration
-- **Frontend** - React DApp interface
-- **Bridge Relayer** - Cross-chain bridge service
-- **Monitoring Stack** - Prometheus, Grafana, and custom dashboards
-
-## 🚀 Quick Start
-
-### Prerequisites
-
-1. **AWS CLI** installed and configured
-2. **Terraform** version 1.0.0 or higher
-3. **kubectl** for Kubernetes management
-4. **Helm** for package management
-5. **jq** for JSON processing
-
-### Installation
-
-```bash
-# Install AWS CLI
-curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-unzip awscliv2.zip
-sudo ./aws/install
-
-# Install Terraform
-curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo apt-key add -
-sudo apt-add-repository "deb [arch=amd64] https://apt.releases.hashicorp.com $(lsb_release -cs) main"
-sudo apt-get update && sudo apt-get install terraform
-
-# Install kubectl
-curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
-sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
-
-# Install Helm
-curl https://get.helm.sh/helm-v3.12.0-linux-amd64.tar.gz | tar xz
-sudo mv linux-amd64/helm /usr/local/bin/
-```
-
-### Configuration
-
-1. **Configure AWS credentials:**
-```bash
-aws configure
-```
-
-2. **Set environment variables:**
-```bash
-export ENVIRONMENT=production
-export AWS_REGION=us-west-2
-export DOMAIN_NAME=gamedin-l3.com
-```
-
-3. **Run the deployment script:**
-```bash
-chmod +x deploy-aws.sh
-./deploy-aws.sh
-```
+### Gaming Services
+- **Real-time Gaming Engine** with WebSocket support
+- **Blockchain Integration** for smart contract interactions
+- **NFT Marketplace** for digital asset trading
+- **Cross-chain Bridge** for asset transfers
 
 ## 📁 Directory Structure
 
@@ -91,299 +35,388 @@ terraform/
 ├── main.tf                 # Main Terraform configuration
 ├── variables.tf            # Variable definitions
 ├── outputs.tf              # Output definitions
-├── deploy-aws.sh           # Deployment script
-├── README.md               # This file
-├── modules/                # Terraform modules
+├── terraform.tfvars        # Variable values (generated)
+├── deploy.ps1              # PowerShell deployment script
+├── deploy.sh               # Bash deployment script
+├── modules/                # Reusable Terraform modules
 │   ├── vpc/               # VPC and networking
-│   ├── eks/               # EKS cluster
-│   ├── rds/               # RDS database
+│   ├── eks/               # EKS cluster and node groups
+│   ├── rds/               # RDS PostgreSQL
 │   ├── redis/             # ElastiCache Redis
 │   ├── mq/                # Amazon MQ
 │   ├── alb/               # Application Load Balancer
 │   ├── s3/                # S3 buckets
-│   ├── route53/           # Route 53 DNS
-│   ├── acm/               # SSL certificates
-│   ├── cloudwatch_alarms/ # CloudWatch alarms
-│   ├── sns/               # SNS topics
-│   └── security_group/    # Security groups
-└── k8s/                   # Kubernetes manifests
-    ├── database.yaml
-    ├── redis.yaml
-    ├── message-queue.yaml
-    ├── api-gateway.yaml
-    ├── gaming-engine.yaml
-    ├── ai-services.yaml
-    ├── frontend.yaml
-    ├── bridge-relayer.yaml
-    └── monitoring/
+│   ├── route53/           # Route53 and SSL certificates
+│   ├── cloudwatch/        # CloudWatch monitoring
+│   └── ecs/               # ECS services
+└── README.md              # This file
 ```
 
-## 🔧 Configuration Options
+## 🚀 Quick Start
 
-### Environment Variables
+### Prerequisites
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `ENVIRONMENT` | Environment name (production/staging/development) | `production` |
-| `AWS_REGION` | AWS region for deployment | `us-west-2` |
-| `DOMAIN_NAME` | Domain name for the application | `gamedin-l3.com` |
+1. **AWS CLI** configured with appropriate credentials
+2. **Terraform** v1.0+ installed
+3. **Docker** for container management
+4. **kubectl** for Kubernetes management
+5. **PowerShell** (for Windows) or **Bash** (for Linux/macOS)
 
-### Terraform Variables
+### Deployment Steps
 
-Key variables can be customized in `terraform.tfvars`:
+#### Option 1: PowerShell (Windows)
 
-```hcl
-# Database Configuration
-db_instance_class = "db.r6g.xlarge"
-db_allocated_storage = 100
-db_max_allocated_storage = 1000
+```powershell
+# Navigate to terraform directory
+cd terraform
 
-# EKS Configuration
-eks_cluster_version = "1.28"
+# Run deployment script
+.\deploy.ps1 -Environment dev -Region us-east-1 -ProjectName gamedin-l3 -DomainName gamedin-l3.com
 
-# Application Replicas
-app_replicas = {
-  api_gateway    = 3
-  gaming_engine  = 2
-  ai_services    = 2
-  frontend       = 2
-  bridge_relayer = 2
-}
-
-# Resource Limits
-app_resources = {
-  api_gateway = {
-    requests = { cpu = "500m", memory = "1Gi" }
-    limits   = { cpu = "2", memory = "4Gi" }
-  }
-  # ... other services
-}
+# For production deployment
+.\deploy.ps1 -Environment prod -Region us-east-1 -ProjectName gamedin-l3 -DomainName gamedin-l3.com -SkipConfirmation
 ```
 
-## 🎮 Gaming Infrastructure
+#### Option 2: Bash (Linux/macOS)
 
-### EKS Node Groups
+```bash
+# Navigate to terraform directory
+cd terraform
 
-The EKS cluster includes specialized node groups:
+# Make script executable
+chmod +x deploy.sh
 
-1. **General Node Group** (`t3.large/t3.xlarge`)
-   - API Gateway, Frontend, Bridge Relayer
-   - Auto-scaling: 1-10 instances
+# Run deployment script
+./deploy.sh dev us-east-1 gamedin-l3 gamedin-l3.com
 
-2. **Gaming Node Group** (`c5.xlarge/c5.2xlarge`)
-   - Gaming Engine with high CPU performance
-   - Auto-scaling: 1-8 instances
-   - Taints to ensure gaming workloads only
+# For production deployment
+./deploy.sh prod us-east-1 gamedin-l3 gamedin-l3.com --skip-confirmation
+```
 
-3. **AI Node Group** (`g4dn.xlarge/g4dn.2xlarge`)
-   - AI Services with GPU acceleration
-   - Auto-scaling: 1-6 instances
-   - Taints to ensure AI workloads only
+#### Option 3: Manual Terraform Commands
 
-### Performance Optimizations
-
-- **CPU Optimization**: Gaming nodes use compute-optimized instances
-- **GPU Acceleration**: AI nodes include NVIDIA GPUs for ML workloads
-- **Network Optimization**: Enhanced networking enabled
-- **Storage**: GP3 volumes for better performance
-- **Auto-scaling**: Cluster autoscaler for dynamic scaling
-
-## 🤖 AI Integration
-
-### NovaSanctum AI
-- Fraud detection and prevention
-- Player behavior analysis
-- Game outcome prediction
-- Real-time risk assessment
-
-### AthenaMist AI
-- Strategic game analysis
-- Player optimization recommendations
-- Performance prediction
-- Advanced game intelligence
-
-### Unified AI Service
-- Orchestration between AI services
-- Caching and optimization
-- Consensus mechanisms
-- Performance metrics
-
-## 🔒 Security Features
-
-### Network Security
-- VPC with private subnets for all workloads
-- Security groups with least privilege access
-- Network ACLs for additional protection
-- VPC Flow Logs for network monitoring
-
-### Data Security
-- Encryption at rest (RDS, S3, EBS)
-- Encryption in transit (TLS 1.2+)
-- KMS key management
-- Secrets Manager for sensitive data
-
-### Access Control
-- IAM roles with least privilege
-- Service accounts for Kubernetes
-- RBAC for cluster access
-- CloudTrail for audit logging
-
-## 📊 Monitoring & Observability
-
-### CloudWatch
-- Application logs
-- System metrics
-- Custom dashboards
-- Automated alerting
-
-### Prometheus & Grafana
-- Application metrics
-- Infrastructure monitoring
-- Custom dashboards
-- Performance analytics
-
-### Custom Dashboards
-- Gaming performance metrics
-- AI service performance
-- Blockchain transaction monitoring
-- Economic metrics
-- System health overview
-
-## 🔄 Deployment Process
-
-### 1. Infrastructure Deployment
 ```bash
 # Initialize Terraform
 terraform init
 
-# Plan deployment
-terraform plan -out=tfplan
+# Create terraform.tfvars (or use the script)
+# Edit terraform.tfvars with your configuration
 
-# Apply infrastructure
-terraform apply tfplan
+# Plan the deployment
+terraform plan
+
+# Apply the deployment
+terraform apply
 ```
 
-### 2. Application Deployment
-```bash
-# Configure kubectl
-aws eks update-kubeconfig --region us-west-2 --name gamedin-l3-production
+## ⚙️ Configuration
 
-# Deploy applications
-kubectl apply -f k8s/
+### Environment Variables
+
+The deployment scripts support the following parameters:
+
+- `Environment`: Deployment environment (dev, staging, prod)
+- `Region`: AWS region for deployment
+- `ProjectName`: Name of the project (used for resource naming)
+- `DomainName`: Primary domain name for the application
+- `Destroy`: Flag to destroy resources instead of creating them
+- `PlanOnly`: Flag to only create a plan without applying
+- `SkipConfirmation`: Flag to skip confirmation prompts
+
+### Customization
+
+You can customize the infrastructure by modifying the following files:
+
+1. **terraform.tfvars**: Main configuration file (generated by scripts)
+2. **variables.tf**: Variable definitions and defaults
+3. **modules/*/variables.tf**: Module-specific configurations
+
+### Key Configuration Options
+
+#### EKS Configuration
+```hcl
+eks_cluster_version = "1.28"
+eks_node_groups = {
+  general = {
+    instance_types = ["t3.medium"]
+    min_size       = 1
+    max_size       = 3
+    desired_size   = 2
+  }
+  gaming = {
+    instance_types = ["c5.large"]
+    min_size       = 1
+    max_size       = 5
+    desired_size   = 2
+  }
+  ai = {
+    instance_types = ["g4dn.xlarge"]
+    min_size       = 1
+    max_size       = 3
+    desired_size   = 1
+  }
+}
 ```
 
-### 3. Verification
-```bash
-# Check cluster status
-kubectl get nodes
-kubectl get pods -n gamedin-l3
-
-# Test endpoints
-curl -f https://api.gamedin-l3.com/health
+#### RDS Configuration
+```hcl
+rds_instance_class = "db.t3.micro"
+rds_allocated_storage = 20
+rds_storage_type = "gp2"
+rds_backup_retention_period = 7
 ```
+
+#### Monitoring Configuration
+```hcl
+alert_emails = ["admin@yourdomain.com"]
+alert_phone_numbers = ["+1234567890"]
+```
+
+## 🔧 Module Details
+
+### VPC Module
+- Creates VPC with public and private subnets
+- Configures NAT gateways for private subnet internet access
+- Sets up route tables and security groups
+- Enables VPC flow logs for monitoring
+
+### EKS Module
+- Deploys EKS cluster with multiple node groups
+- Configures IAM roles and policies
+- Sets up cluster autoscaling
+- Enables cluster monitoring
+
+### RDS Module
+- Deploys PostgreSQL RDS instance
+- Configures backup and maintenance windows
+- Sets up parameter groups and monitoring
+- Enables encryption and security
+
+### Redis Module
+- Deploys ElastiCache Redis cluster
+- Configures parameter groups and user groups
+- Sets up monitoring and alerts
+- Enables encryption and security
+
+### ALB Module
+- Deploys Application Load Balancer
+- Configures target groups and listeners
+- Sets up WAF protection
+- Enables access logging
+
+### S3 Module
+- Creates multiple S3 buckets for different purposes
+- Configures lifecycle policies and encryption
+- Sets up CORS and bucket policies
+- Enables versioning and access logging
+
+### Route53 Module
+- Manages DNS records and hosted zones
+- Configures SSL certificates
+- Sets up health checks and failover
+- Enables geolocation and latency routing
+
+### CloudWatch Module
+- Creates comprehensive monitoring dashboard
+- Sets up SNS topics for alerts
+- Configures metric alarms
+- Creates log groups for application logs
+
+### ECS Module
+- Deploys ECS services for application and API
+- Configures task definitions and roles
+- Sets up auto scaling policies
+- Manages load balancer integration
+
+## 📊 Monitoring and Observability
+
+### CloudWatch Dashboard
+The infrastructure includes a comprehensive CloudWatch dashboard with:
+
+- **Load Balancer Metrics**: Request count, response time, error rates
+- **ECS Service Metrics**: CPU and memory utilization
+- **RDS Metrics**: Database performance and connections
+- **Redis Metrics**: Cache performance and memory usage
+- **S3 Metrics**: Storage usage and request patterns
+- **Route53 Health Checks**: Domain availability monitoring
+
+### Alerts
+Automated alerts are configured for:
+
+- High CPU/memory utilization
+- Database connection issues
+- Load balancer errors
+- Health check failures
+- Application errors
+- AI service latency
+- Blockchain transaction failures
+
+### Log Groups
+Centralized logging is configured for:
+
+- Application logs
+- AI service logs
+- Gaming engine logs
+- Blockchain service logs
+- API gateway logs
+
+## 🔒 Security Features
+
+### Network Security
+- VPC with private subnets for sensitive resources
+- Security groups with least-privilege access
+- WAF protection for web applications
+- SSL/TLS encryption for all communications
+
+### Data Security
+- Encryption at rest for all storage
+- Encryption in transit for all communications
+- Secrets management for sensitive data
+- IAM roles with minimal permissions
+
+### Access Control
+- IAM roles for ECS tasks
+- Service accounts for Kubernetes
+- Cross-account access controls
+- Audit logging for all actions
 
 ## 🚨 Troubleshooting
 
 ### Common Issues
 
-1. **Terraform State Lock**
+#### Terraform State Issues
 ```bash
-# If state is locked, force unlock
-terraform force-unlock <lock-id>
+# If state is corrupted or lost
+terraform init -reconfigure
+terraform import [resource] [id]
 ```
 
-2. **EKS Cluster Issues**
+#### EKS Cluster Issues
 ```bash
-# Check cluster status
-aws eks describe-cluster --name gamedin-l3-production --region us-west-2
-
 # Update kubeconfig
-aws eks update-kubeconfig --region us-west-2 --name gamedin-l3-production
+aws eks update-kubeconfig --region us-east-1 --name gamedin-l3-cluster
+
+# Check cluster status
+kubectl get nodes
+kubectl get pods --all-namespaces
 ```
 
-3. **Pod Issues**
-```bash
-# Check pod logs
-kubectl logs -f <pod-name> -n gamedin-l3
-
-# Describe pod for details
-kubectl describe pod <pod-name> -n gamedin-l3
-```
-
-4. **Database Connection Issues**
+#### RDS Connection Issues
 ```bash
 # Check RDS status
-aws rds describe-db-instances --db-instance-identifier gamedin-l3-production
+aws rds describe-db-instances --db-instance-identifier gamedin-l3-rds
 
 # Test connection
-kubectl exec -it <pod-name> -n gamedin-l3 -- psql $DATABASE_URL
+psql -h [endpoint] -U [username] -d [database]
 ```
 
-### Log Locations
-
-- **Application Logs**: `/aws/eks/gamedin-l3-production/application`
-- **System Logs**: `/aws/eks/gamedin-l3-production/system`
-- **Container Logs**: `/aws/eks/gamedin-l3-production/containers`
-- **VPC Flow Logs**: `/aws/vpc/flowlogs/production`
-
-## 💰 Cost Optimization
-
-### Instance Types
-- Use Spot instances for non-critical workloads
-- Right-size instances based on actual usage
-- Enable auto-scaling to scale down during low usage
-
-### Storage Optimization
-- Use GP3 volumes for better performance/cost ratio
-- Enable lifecycle policies for S3 buckets
-- Use intelligent tiering for infrequently accessed data
-
-### Monitoring Costs
-- Set up billing alerts
-- Monitor resource utilization
-- Use cost allocation tags
-- Regular cost reviews
-
-## 🔄 Updates & Maintenance
-
-### Infrastructure Updates
+#### Load Balancer Issues
 ```bash
-# Update Terraform modules
-terraform init -upgrade
+# Check ALB status
+aws elbv2 describe-load-balancers --names gamedin-l3-alb
 
-# Plan and apply updates
-terraform plan -out=tfplan
-terraform apply tfplan
+# Check target health
+aws elbv2 describe-target-health --target-group-arn [arn]
 ```
 
-### Application Updates
+### Debug Commands
+
+#### Terraform Debug
 ```bash
-# Update container images
-kubectl set image deployment/<deployment> <container>=<new-image> -n gamedin-l3
+# Enable debug logging
+export TF_LOG=DEBUG
+export TF_LOG_PATH=terraform.log
 
-# Rollback if needed
-kubectl rollout undo deployment/<deployment> -n gamedin-l3
+# Check plan details
+terraform plan -detailed-exitcode
 ```
 
-### Security Updates
-- Regular security patches
-- Dependency updates
-- Certificate renewals
-- Security group reviews
+#### AWS Debug
+```bash
+# Enable AWS CLI debug
+export AWS_DEBUG=true
 
-## 📞 Support
+# Check AWS credentials
+aws sts get-caller-identity
+```
 
-For issues and questions:
+#### Kubernetes Debug
+```bash
+# Check cluster info
+kubectl cluster-info
 
-1. Check the troubleshooting section
-2. Review CloudWatch logs
-3. Check Terraform documentation
-4. Contact the GameDin team
+# Check node resources
+kubectl describe nodes
+
+# Check pod logs
+kubectl logs [pod-name] -n [namespace]
+```
+
+## 📈 Scaling and Performance
+
+### Auto Scaling
+The infrastructure includes auto scaling for:
+
+- **EKS Node Groups**: Based on CPU and memory utilization
+- **ECS Services**: Based on application load
+- **RDS**: Read replicas for read-heavy workloads
+- **Redis**: Multi-AZ deployment for high availability
+
+### Performance Optimization
+- **CDN**: CloudFront for static asset delivery
+- **Caching**: Redis for session and data caching
+- **Load Balancing**: ALB with health checks and stickiness
+- **Database**: Connection pooling and query optimization
+
+### Cost Optimization
+- **Spot Instances**: For non-critical workloads
+- **Reserved Instances**: For predictable workloads
+- **S3 Lifecycle**: Automatic data archival
+- **RDS Scheduling**: Stop/start for dev environments
+
+## 🔄 Maintenance
+
+### Regular Tasks
+- **Security Updates**: Monthly security patches
+- **Backup Verification**: Weekly backup testing
+- **Performance Monitoring**: Daily performance reviews
+- **Cost Analysis**: Monthly cost optimization
+
+### Backup and Recovery
+- **Automated Backups**: Daily RDS backups
+- **Cross-Region Replication**: S3 bucket replication
+- **Disaster Recovery**: Multi-AZ deployment
+- **Point-in-Time Recovery**: RDS point-in-time restore
+
+## 📚 Additional Resources
+
+### Documentation
+- [AWS EKS Documentation](https://docs.aws.amazon.com/eks/)
+- [Terraform Documentation](https://www.terraform.io/docs)
+- [Kubernetes Documentation](https://kubernetes.io/docs/)
+
+### Tools
+- [AWS CLI](https://aws.amazon.com/cli/)
+- [kubectl](https://kubernetes.io/docs/tasks/tools/)
+- [Terraform](https://www.terraform.io/downloads.html)
+
+### Support
+- [AWS Support](https://aws.amazon.com/support/)
+- [Terraform Community](https://www.terraform.io/community)
+- [Kubernetes Community](https://kubernetes.io/community/)
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Test thoroughly
+5. Submit a pull request
 
 ## 📄 License
 
-This infrastructure is part of the GameDin L3 project and is licensed under the same terms as the main project.
+This project is licensed under the MIT License - see the LICENSE file for details.
 
 ---
 
-**Note**: This infrastructure is designed for production use with high availability and security. Always test changes in a staging environment before applying to production. 
+**Note**: This infrastructure is designed for production use. Always test in a development environment first and ensure you have proper backup and disaster recovery procedures in place. 
