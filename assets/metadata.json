@@ -1,0 +1,48 @@
+{
+  "name": "GameDin Token",
+  "symbol": "GDI",
+  "description": "The native utility token of the GameDin ecosystem, powering decentralized gaming, NFT trading, and community governance. GDI enables seamless transactions, staking rewards, and exclusive platform access across the GameDin universe. Built for the future of gaming and DeFi integration.",
+  "image": "https://arweave.net/[LOGO_HASH_PLACEHOLDER]",
+  "external_url": "https://gamedin.io",
+  "attributes": [
+    {
+      "trait_type": "Token Type",
+      "value": "Utility"
+    },
+    {
+      "trait_type": "Blockchain",
+      "value": "Solana"
+    },
+    {
+      "trait_type": "Decimals",
+      "value": "9"
+    },
+    {
+      "trait_type": "Total Supply",
+      "value": "1000000000"
+    },
+    {
+      "trait_type": "Use Case",
+      "value": "Gaming, DeFi, Governance"
+    }
+  ],
+  "properties": {
+    "files": [
+      {
+        "type": "image/png",
+        "uri": "https://arweave.net/[LOGO_HASH_PLACEHOLDER]"
+      }
+    ],
+    "category": "image",
+    "creators": [
+      {
+        "address": "[CREATOR_ADDRESS_PLACEHOLDER]",
+        "share": 100
+      }
+    ]
+  },
+  "collection": {
+    "name": "GameDin Ecosystem",
+    "family": "GameDin"
+  }
+} 
