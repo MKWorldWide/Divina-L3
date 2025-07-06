@@ -1,0 +1,744 @@
+{
+  "dashboard": {
+    "id": null,
+    "title": "GameDin L3 + AthenaMist AI Ecosystem Dashboard",
+    "tags": ["gaming", "blockchain", "ai", "monitoring"],
+    "style": "dark",
+    "timezone": "browser",
+    "refresh": "30s",
+    "time": {
+      "from": "now-1h",
+      "to": "now"
+    },
+    "panels": [
+      {
+        "id": 1,
+        "title": "System Overview",
+        "type": "stat",
+        "gridPos": {
+          "h": 8,
+          "w": 24,
+          "x": 0,
+          "y": 0
+        },
+        "targets": [
+          {
+            "expr": "gamedin_active_games",
+            "legendFormat": "Active Games"
+          },
+          {
+            "expr": "gamedin_active_players",
+            "legendFormat": "Active Players"
+          },
+          {
+            "expr": "gamedin_total_transactions",
+            "legendFormat": "Total Transactions"
+          },
+          {
+            "expr": "gamedin_ai_requests_total",
+            "legendFormat": "AI Requests"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "displayMode": "list",
+              "orientation": "horizontal"
+            }
+          }
+        }
+      },
+      {
+        "id": 2,
+        "title": "Real-time Gaming Metrics",
+        "type": "timeseries",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 8
+        },
+        "targets": [
+          {
+            "expr": "rate(gamedin_game_actions_total[5m])",
+            "legendFormat": "Game Actions/sec"
+          },
+          {
+            "expr": "rate(gamedin_player_joins_total[5m])",
+            "legendFormat": "Player Joins/sec"
+          },
+          {
+            "expr": "rate(gamedin_game_completions_total[5m])",
+            "legendFormat": "Game Completions/sec"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "drawStyle": "line",
+              "lineInterpolation": "linear",
+              "barAlignment": 0,
+              "lineWidth": 1,
+              "fillOpacity": 10,
+              "gradientMode": "none",
+              "spanNulls": false,
+              "showPoints": "never",
+              "pointSize": 5,
+              "stacking": {
+                "mode": "none",
+                "group": "A"
+              },
+              "axisLabel": "",
+              "scaleDistribution": {
+                "type": "linear"
+              },
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "vis": false
+              }
+            }
+          }
+        }
+      },
+      {
+        "id": 3,
+        "title": "AI Performance Metrics",
+        "type": "timeseries",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 8
+        },
+        "targets": [
+          {
+            "expr": "rate(novas Sanctum_ai_requests_total[5m])",
+            "legendFormat": "NovaSanctum Requests/sec"
+          },
+          {
+            "expr": "rate(athena_mist_ai_requests_total[5m])",
+            "legendFormat": "AthenaMist Requests/sec"
+          },
+          {
+            "expr": "rate(unified_ai_requests_total[5m])",
+            "legendFormat": "Unified AI Requests/sec"
+          },
+          {
+            "expr": "histogram_quantile(0.95, rate(ai_response_time_seconds_bucket[5m]))",
+            "legendFormat": "95th Percentile Response Time"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "drawStyle": "line",
+              "lineInterpolation": "linear",
+              "barAlignment": 0,
+              "lineWidth": 1,
+              "fillOpacity": 10,
+              "gradientMode": "none",
+              "spanNulls": false,
+              "showPoints": "never",
+              "pointSize": 5,
+              "stacking": {
+                "mode": "none",
+                "group": "A"
+              },
+              "axisLabel": "",
+              "scaleDistribution": {
+                "type": "linear"
+              },
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "vis": false
+              }
+            }
+          }
+        }
+      },
+      {
+        "id": 4,
+        "title": "Blockchain Performance",
+        "type": "timeseries",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 16
+        },
+        "targets": [
+          {
+            "expr": "rate(blockchain_transactions_total[5m])",
+            "legendFormat": "Transactions/sec"
+          },
+          {
+            "expr": "rate(blockchain_gas_used_total[5m])",
+            "legendFormat": "Gas Used/sec"
+          },
+          {
+            "expr": "blockchain_block_height",
+            "legendFormat": "Block Height"
+          },
+          {
+            "expr": "rate(blockchain_contract_calls_total[5m])",
+            "legendFormat": "Contract Calls/sec"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "drawStyle": "line",
+              "lineInterpolation": "linear",
+              "barAlignment": 0,
+              "lineWidth": 1,
+              "fillOpacity": 10,
+              "gradientMode": "none",
+              "spanNulls": false,
+              "showPoints": "never",
+              "pointSize": 5,
+              "stacking": {
+                "mode": "none",
+                "group": "A"
+              },
+              "axisLabel": "",
+              "scaleDistribution": {
+                "type": "linear"
+              },
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "vis": false
+              }
+            }
+          }
+        }
+      },
+      {
+        "id": 5,
+        "title": "Fraud Detection & Security",
+        "type": "timeseries",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 16
+        },
+        "targets": [
+          {
+            "expr": "rate(fraud_detections_total[5m])",
+            "legendFormat": "Fraud Detections/sec"
+          },
+          {
+            "expr": "rate(suspicious_players_total[5m])",
+            "legendFormat": "Suspicious Players/sec"
+          },
+          {
+            "expr": "rate(security_violations_total[5m])",
+            "legendFormat": "Security Violations/sec"
+          },
+          {
+            "expr": "ai_fraud_score_average",
+            "legendFormat": "Average Fraud Score"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "drawStyle": "line",
+              "lineInterpolation": "linear",
+              "barAlignment": 0,
+              "lineWidth": 1,
+              "fillOpacity": 10,
+              "gradientMode": "none",
+              "spanNulls": false,
+              "showPoints": "never",
+              "pointSize": 5,
+              "stacking": {
+                "mode": "none",
+                "group": "A"
+              },
+              "axisLabel": "",
+              "scaleDistribution": {
+                "type": "linear"
+              },
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "vis": false
+              }
+            }
+          }
+        }
+      },
+      {
+        "id": 6,
+        "title": "System Resources",
+        "type": "timeseries",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 24
+        },
+        "targets": [
+          {
+            "expr": "100 - (avg by (instance) (irate(node_cpu_seconds_total{mode=\"idle\"}[5m])) * 100)",
+            "legendFormat": "CPU Usage %"
+          },
+          {
+            "expr": "100 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes * 100)",
+            "legendFormat": "Memory Usage %"
+          },
+          {
+            "expr": "rate(node_disk_io_time_seconds_total[5m])",
+            "legendFormat": "Disk I/O"
+          },
+          {
+            "expr": "rate(node_network_receive_bytes_total[5m])",
+            "legendFormat": "Network Receive"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "drawStyle": "line",
+              "lineInterpolation": "linear",
+              "barAlignment": 0,
+              "lineWidth": 1,
+              "fillOpacity": 10,
+              "gradientMode": "none",
+              "spanNulls": false,
+              "showPoints": "never",
+              "pointSize": 5,
+              "stacking": {
+                "mode": "none",
+                "group": "A"
+              },
+              "axisLabel": "",
+              "scaleDistribution": {
+                "type": "linear"
+              },
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "vis": false
+              }
+            }
+          }
+        }
+      },
+      {
+        "id": 7,
+        "title": "Player Analytics",
+        "type": "timeseries",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 24
+        },
+        "targets": [
+          {
+            "expr": "player_skill_level_average",
+            "legendFormat": "Average Skill Level"
+          },
+          {
+            "expr": "player_win_rate_average",
+            "legendFormat": "Average Win Rate"
+          },
+          {
+            "expr": "player_session_duration_average",
+            "legendFormat": "Average Session Duration"
+          },
+          {
+            "expr": "rate(player_achievements_total[5m])",
+            "legendFormat": "Achievements/sec"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "drawStyle": "line",
+              "lineInterpolation": "linear",
+              "barAlignment": 0,
+              "lineWidth": 1,
+              "fillOpacity": 10,
+              "gradientMode": "none",
+              "spanNulls": false,
+              "showPoints": "never",
+              "pointSize": 5,
+              "stacking": {
+                "mode": "none",
+                "group": "A"
+              },
+              "axisLabel": "",
+              "scaleDistribution": {
+                "type": "linear"
+              },
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "vis": false
+              }
+            }
+          }
+        }
+      },
+      {
+        "id": 8,
+        "title": "Game Types Distribution",
+        "type": "piechart",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 32
+        },
+        "targets": [
+          {
+            "expr": "gamedin_games_by_type",
+            "legendFormat": "{{game_type}}"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "vis": false
+              }
+            }
+          }
+        }
+      },
+      {
+        "id": 9,
+        "title": "AI Model Performance",
+        "type": "timeseries",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 32
+        },
+        "targets": [
+          {
+            "expr": "ai_model_accuracy",
+            "legendFormat": "Model Accuracy"
+          },
+          {
+            "expr": "ai_prediction_confidence_average",
+            "legendFormat": "Average Prediction Confidence"
+          },
+          {
+            "expr": "rate(ai_model_errors_total[5m])",
+            "legendFormat": "Model Errors/sec"
+          },
+          {
+            "expr": "ai_model_inference_time_average",
+            "legendFormat": "Average Inference Time"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "drawStyle": "line",
+              "lineInterpolation": "linear",
+              "barAlignment": 0,
+              "lineWidth": 1,
+              "fillOpacity": 10,
+              "gradientMode": "none",
+              "spanNulls": false,
+              "showPoints": "never",
+              "pointSize": 5,
+              "stacking": {
+                "mode": "none",
+                "group": "A"
+              },
+              "axisLabel": "",
+              "scaleDistribution": {
+                "type": "linear"
+              },
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "vis": false
+              }
+            }
+          }
+        }
+      },
+      {
+        "id": 10,
+        "title": "Error Rates & Alerts",
+        "type": "timeseries",
+        "gridPos": {
+          "h": 8,
+          "w": 24,
+          "x": 0,
+          "y": 40
+        },
+        "targets": [
+          {
+            "expr": "rate(http_requests_total{status=~\"5..\"}[5m])",
+            "legendFormat": "5xx Errors/sec"
+          },
+          {
+            "expr": "rate(http_requests_total{status=~\"4..\"}[5m])",
+            "legendFormat": "4xx Errors/sec"
+          },
+          {
+            "expr": "rate(websocket_connection_errors_total[5m])",
+            "legendFormat": "WebSocket Errors/sec"
+          },
+          {
+            "expr": "rate(database_connection_errors_total[5m])",
+            "legendFormat": "Database Errors/sec"
+          },
+          {
+            "expr": "rate(blockchain_transaction_failures_total[5m])",
+            "legendFormat": "Blockchain Failures/sec"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "drawStyle": "line",
+              "lineInterpolation": "linear",
+              "barAlignment": 0,
+              "lineWidth": 1,
+              "fillOpacity": 10,
+              "gradientMode": "none",
+              "spanNulls": false,
+              "showPoints": "never",
+              "pointSize": 5,
+              "stacking": {
+                "mode": "none",
+                "group": "A"
+              },
+              "axisLabel": "",
+              "scaleDistribution": {
+                "type": "linear"
+              },
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "vis": false
+              }
+            }
+          }
+        }
+      },
+      {
+        "id": 11,
+        "title": "Revenue & Economics",
+        "type": "timeseries",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 48
+        },
+        "targets": [
+          {
+            "expr": "rate(revenue_total[5m])",
+            "legendFormat": "Revenue/sec"
+          },
+          {
+            "expr": "rate(platform_fees_total[5m])",
+            "legendFormat": "Platform Fees/sec"
+          },
+          {
+            "expr": "rate(ai_service_fees_total[5m])",
+            "legendFormat": "AI Service Fees/sec"
+          },
+          {
+            "expr": "average_stake_per_game",
+            "legendFormat": "Average Stake per Game"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "drawStyle": "line",
+              "lineInterpolation": "linear",
+              "barAlignment": 0,
+              "lineWidth": 1,
+              "fillOpacity": 10,
+              "gradientMode": "none",
+              "spanNulls": false,
+              "showPoints": "never",
+              "pointSize": 5,
+              "stacking": {
+                "mode": "none",
+                "group": "A"
+              },
+              "axisLabel": "",
+              "scaleDistribution": {
+                "type": "linear"
+              },
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "vis": false
+              }
+            }
+          }
+        }
+      },
+      {
+        "id": 12,
+        "title": "Network Performance",
+        "type": "timeseries",
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 48
+        },
+        "targets": [
+          {
+            "expr": "rate(websocket_messages_total[5m])",
+            "legendFormat": "WebSocket Messages/sec"
+          },
+          {
+            "expr": "websocket_latency_average",
+            "legendFormat": "Average WebSocket Latency"
+          },
+          {
+            "expr": "rate(api_requests_total[5m])",
+            "legendFormat": "API Requests/sec"
+          },
+          {
+            "expr": "api_response_time_average",
+            "legendFormat": "Average API Response Time"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "drawStyle": "line",
+              "lineInterpolation": "linear",
+              "barAlignment": 0,
+              "lineWidth": 1,
+              "fillOpacity": 10,
+              "gradientMode": "none",
+              "spanNulls": false,
+              "showPoints": "never",
+              "pointSize": 5,
+              "stacking": {
+                "mode": "none",
+                "group": "A"
+              },
+              "axisLabel": "",
+              "scaleDistribution": {
+                "type": "linear"
+              },
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "vis": false
+              }
+            }
+          }
+        }
+      }
+    ],
+    "templating": {
+      "list": [
+        {
+          "name": "game_type",
+          "type": "query",
+          "query": "label_values(gamedin_games_total, game_type)",
+          "refresh": 2,
+          "includeAll": true,
+          "multi": true
+        },
+        {
+          "name": "ai_service",
+          "type": "query",
+          "query": "label_values(ai_requests_total, service)",
+          "refresh": 2,
+          "includeAll": true,
+          "multi": true
+        }
+      ]
+    },
+    "annotations": {
+      "list": [
+        {
+          "name": "Deployments",
+          "datasource": "Prometheus",
+          "expr": "changes(app_version[1m]) > 0",
+          "iconColor": "green",
+          "titleFormat": "Deployment",
+          "textFormat": "New version deployed"
+        },
+        {
+          "name": "Alerts",
+          "datasource": "Prometheus",
+          "expr": "ALERTS{alertstate=\"firing\"}",
+          "iconColor": "red",
+          "titleFormat": "Alert",
+          "textFormat": "{{alertname}}"
+        }
+      ]
+    },
+    "links": [
+      {
+        "title": "GameDin L3 Documentation",
+        "url": "https://docs.gamedin.io",
+        "targetBlank": true
+      },
+      {
+        "title": "AthenaMist AI Documentation",
+        "url": "https://docs.athenamist.ai",
+        "targetBlank": true
+      },
+      {
+        "title": "System Health Check",
+        "url": "/health",
+        "targetBlank": false
+      }
+    ]
+  }
+} 
