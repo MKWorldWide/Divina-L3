@@ -1,0 +1,159 @@
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { useWeb3React } from '@web3-react/core';
+import { InjectedConnector } from '@web3-react/injected-connector';
+import { WalletConnectConnector } from '@web3-react/walletconnect-connector';
+import { ethers } from 'ethers';
+
+// Types
+interface WalletContextType {
+  account: string | null;
+  isConnected: boolean;
+  balance: number;
+  connect: () => Promise<void>;
+  disconnect: () => void;
+  sendTransaction: (to: string, amount: string) => Promise<string>;
+  signMessage: (message: string) => Promise<string>;
+  chainId: number | null;
+  provider: ethers.providers.Web3Provider | null;
+}
+
+interface WalletProviderProps {
+  children: ReactNode;
+}
+
+// Connectors
+const injected = new InjectedConnector({
+  supportedChainIds: [1, 3, 4, 5, 42, 56, 97, 137, 80001], // Mainnet, Testnets, BSC, Polygon
+});
+
+const walletConnect = new WalletConnectConnector({
+  rpc: {
+    1: process.env.REACT_APP_ETHEREUM_RPC_URL || 'https://mainnet.infura.io/v3/your-project-id',
+    56: 'https://bsc-dataseed.binance.org/',
+    137: 'https://polygon-rpc.com/',
+  },
+  qrcode: true,
+});
+
+// Context
+const WalletContext = createContext<WalletContextType | undefined>(undefined);
+
+// Provider Component
+export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
+  const { account, library, chainId, activate, deactivate } = useWeb3React();
+  const [balance, setBalance] = useState<number>(0);
+  const [provider, setProvider] = useState<ethers.providers.Web3Provider | null>(null);
+
+  // Update provider when library changes
+  useEffect(() => {
+    if (library) {
+      setProvider(library);
+    }
+  }, [library]);
+
+  // Update balance when account or provider changes
+  useEffect(() => {
+    const updateBalance = async () => {
+      if (account && provider) {
+        try {
+          const balanceWei = await provider.getBalance(account);
+          const balanceEth = parseFloat(ethers.utils.formatEther(balanceWei));
+          setBalance(balanceEth);
+        } catch (error) {
+          console.error('Failed to fetch balance:', error);
+          setBalance(0);
+        }
+      } else {
+        setBalance(0);
+      }
+    };
+
+    updateBalance();
+    
+    // Set up balance polling
+    const interval = setInterval(updateBalance, 10000); // Update every 10 seconds
+    
+    return () => clearInterval(interval);
+  }, [account, provider]);
+
+  const connect = async () => {
+    try {
+      // Try MetaMask first
+      await activate(injected);
+    } catch (error) {
+      console.log('MetaMask connection failed, trying WalletConnect...');
+      try {
+        await activate(walletConnect);
+      } catch (walletConnectError) {
+        console.error('Failed to connect wallet:', walletConnectError);
+        throw new Error('Failed to connect wallet. Please make sure you have MetaMask or WalletConnect installed.');
+      }
+    }
+  };
+
+  const disconnect = () => {
+    deactivate();
+  };
+
+  const sendTransaction = async (to: string, amount: string): Promise<string> => {
+    if (!account || !provider) {
+      throw new Error('Wallet not connected');
+    }
+
+    try {
+      const signer = provider.getSigner();
+      const tx = await signer.sendTransaction({
+        to,
+        value: ethers.utils.parseEther(amount),
+      });
+
+      const receipt = await tx.wait();
+      return receipt.transactionHash;
+    } catch (error) {
+      console.error('Transaction failed:', error);
+      throw new Error('Transaction failed. Please check your balance and try again.');
+    }
+  };
+
+  const signMessage = async (message: string): Promise<string> => {
+    if (!account || !provider) {
+      throw new Error('Wallet not connected');
+    }
+
+    try {
+      const signer = provider.getSigner();
+      const signature = await signer.signMessage(message);
+      return signature;
+    } catch (error) {
+      console.error('Message signing failed:', error);
+      throw new Error('Failed to sign message. Please try again.');
+    }
+  };
+
+  const value: WalletContextType = {
+    account,
+    isConnected: !!account,
+    balance,
+    connect,
+    disconnect,
+    sendTransaction,
+    signMessage,
+    chainId,
+    provider,
+  };
+
+  return (
+    <WalletContext.Provider value={value}>
+      {children}
+    </WalletContext.Provider>
+  );
+};
+
+// Hook
+export const useWallet = (): WalletContextType => {
+  const context = useContext(WalletContext);
+  if (context === undefined) {
+    throw new Error('useWallet must be used within a WalletProvider');
+  }
+  return context;
+}; 

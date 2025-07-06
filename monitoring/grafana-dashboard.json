@@ -1,0 +1,799 @@
+{
+  "dashboard": {
+    "id": null,
+    "title": "GameDin L3 Ecosystem Dashboard",
+    "tags": ["gaming", "blockchain", "ai", "monitoring"],
+    "style": "dark",
+    "timezone": "browser",
+    "panels": [
+      {
+        "id": 1,
+        "title": "System Overview",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "gamedin_active_games",
+            "legendFormat": "Active Games"
+          },
+          {
+            "expr": "gamedin_connected_players",
+            "legendFormat": "Connected Players"
+          },
+          {
+            "expr": "gamedin_total_transactions",
+            "legendFormat": "Total Transactions"
+          },
+          {
+            "expr": "gamedin_ai_analyses",
+            "legendFormat": "AI Analyses"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "displayMode": "list",
+              "orientation": "horizontal"
+            }
+          }
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 24,
+          "x": 0,
+          "y": 0
+        }
+      },
+      {
+        "id": 2,
+        "title": "Gaming Performance",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(gamedin_games_completed[5m])",
+            "legendFormat": "Games Completed/sec"
+          },
+          {
+            "expr": "rate(gamedin_player_actions[5m])",
+            "legendFormat": "Player Actions/sec"
+          },
+          {
+            "expr": "gamedin_average_game_duration",
+            "legendFormat": "Avg Game Duration"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "drawStyle": "line",
+              "lineInterpolation": "linear",
+              "barAlignment": 0,
+              "lineWidth": 1,
+              "fillOpacity": 10,
+              "gradientMode": "none",
+              "spanNulls": false,
+              "showPoints": "never",
+              "pointSize": 5,
+              "stacking": {
+                "mode": "none",
+                "group": "A"
+              },
+              "axisLabel": "",
+              "scaleDistribution": {
+                "type": "linear"
+              },
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "vis": false
+              }
+            },
+            "unit": "short",
+            "min": 0
+          }
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 8
+        }
+      },
+      {
+        "id": 3,
+        "title": "AI Service Performance",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(nova_sanctum_requests_total[5m])",
+            "legendFormat": "NovaSanctum Requests/sec"
+          },
+          {
+            "expr": "rate(athena_mist_requests_total[5m])",
+            "legendFormat": "AthenaMist Requests/sec"
+          },
+          {
+            "expr": "rate(unified_ai_requests_total[5m])",
+            "legendFormat": "Unified AI Requests/sec"
+          },
+          {
+            "expr": "ai_service_response_time_seconds",
+            "legendFormat": "AI Response Time"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "drawStyle": "line",
+              "lineInterpolation": "linear",
+              "barAlignment": 0,
+              "lineWidth": 1,
+              "fillOpacity": 10,
+              "gradientMode": "none",
+              "spanNulls": false,
+              "showPoints": "never",
+              "pointSize": 5,
+              "stacking": {
+                "mode": "none",
+                "group": "A"
+              },
+              "axisLabel": "",
+              "scaleDistribution": {
+                "type": "linear"
+              },
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "vis": false
+              }
+            },
+            "unit": "short",
+            "min": 0
+          }
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 8
+        }
+      },
+      {
+        "id": 4,
+        "title": "Blockchain Metrics",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(blockchain_transactions_total[5m])",
+            "legendFormat": "Transactions/sec"
+          },
+          {
+            "expr": "blockchain_gas_used",
+            "legendFormat": "Gas Used"
+          },
+          {
+            "expr": "blockchain_pending_transactions",
+            "legendFormat": "Pending Transactions"
+          },
+          {
+            "expr": "rate(bridge_transactions_total[5m])",
+            "legendFormat": "Bridge Transactions/sec"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "drawStyle": "line",
+              "lineInterpolation": "linear",
+              "barAlignment": 0,
+              "lineWidth": 1,
+              "fillOpacity": 10,
+              "gradientMode": "none",
+              "spanNulls": false,
+              "showPoints": "never",
+              "pointSize": 5,
+              "stacking": {
+                "mode": "none",
+                "group": "A"
+              },
+              "axisLabel": "",
+              "scaleDistribution": {
+                "type": "linear"
+              },
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "vis": false
+              }
+            },
+            "unit": "short",
+            "min": 0
+          }
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 16
+        }
+      },
+      {
+        "id": 5,
+        "title": "Fraud Detection & Security",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(fraud_detections_total[5m])",
+            "legendFormat": "Fraud Detections/sec"
+          },
+          {
+            "expr": "high_risk_players",
+            "legendFormat": "High Risk Players"
+          },
+          {
+            "expr": "average_fraud_score",
+            "legendFormat": "Avg Fraud Score"
+          },
+          {
+            "expr": "rate(security_incidents_total[5m])",
+            "legendFormat": "Security Incidents/sec"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "drawStyle": "line",
+              "lineInterpolation": "linear",
+              "barAlignment": 0,
+              "lineWidth": 1,
+              "fillOpacity": 10,
+              "gradientMode": "none",
+              "spanNulls": false,
+              "showPoints": "never",
+              "pointSize": 5,
+              "stacking": {
+                "mode": "none",
+                "group": "A"
+              },
+              "axisLabel": "",
+              "scaleDistribution": {
+                "type": "linear"
+              },
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "vis": false
+              }
+            },
+            "unit": "short",
+            "min": 0
+          }
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 16
+        }
+      },
+      {
+        "id": 6,
+        "title": "Database Performance",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(database_queries_total[5m])",
+            "legendFormat": "Queries/sec"
+          },
+          {
+            "expr": "database_query_duration_seconds",
+            "legendFormat": "Query Duration"
+          },
+          {
+            "expr": "database_cache_hit_rate",
+            "legendFormat": "Cache Hit Rate"
+          },
+          {
+            "expr": "database_connections_active",
+            "legendFormat": "Active Connections"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "drawStyle": "line",
+              "lineInterpolation": "linear",
+              "barAlignment": 0,
+              "lineWidth": 1,
+              "fillOpacity": 10,
+              "gradientMode": "none",
+              "spanNulls": false,
+              "showPoints": "never",
+              "pointSize": 5,
+              "stacking": {
+                "mode": "none",
+                "group": "A"
+              },
+              "axisLabel": "",
+              "scaleDistribution": {
+                "type": "linear"
+              },
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "vis": false
+              }
+            },
+            "unit": "short",
+            "min": 0
+          }
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 24
+        }
+      },
+      {
+        "id": 7,
+        "title": "Network Performance",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(websocket_connections_total[5m])",
+            "legendFormat": "WebSocket Connections/sec"
+          },
+          {
+            "expr": "network_latency_seconds",
+            "legendFormat": "Network Latency"
+          },
+          {
+            "expr": "rate(network_errors_total[5m])",
+            "legendFormat": "Network Errors/sec"
+          },
+          {
+            "expr": "bandwidth_usage_bytes",
+            "legendFormat": "Bandwidth Usage"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "drawStyle": "line",
+              "lineInterpolation": "linear",
+              "barAlignment": 0,
+              "lineWidth": 1,
+              "fillOpacity": 10,
+              "gradientMode": "none",
+              "spanNulls": false,
+              "showPoints": "never",
+              "pointSize": 5,
+              "stacking": {
+                "mode": "none",
+                "group": "A"
+              },
+              "axisLabel": "",
+              "scaleDistribution": {
+                "type": "linear"
+              },
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "vis": false
+              }
+            },
+            "unit": "short",
+            "min": 0
+          }
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 24
+        }
+      },
+      {
+        "id": 8,
+        "title": "AI Model Performance",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "ai_model_accuracy",
+            "legendFormat": "Model Accuracy"
+          },
+          {
+            "expr": "ai_model_inference_time_seconds",
+            "legendFormat": "Inference Time"
+          },
+          {
+            "expr": "ai_model_confidence_score",
+            "legendFormat": "Confidence Score"
+          },
+          {
+            "expr": "rate(ai_model_predictions_total[5m])",
+            "legendFormat": "Predictions/sec"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "drawStyle": "line",
+              "lineInterpolation": "linear",
+              "barAlignment": 0,
+              "lineWidth": 1,
+              "fillOpacity": 10,
+              "gradientMode": "none",
+              "spanNulls": false,
+              "showPoints": "never",
+              "pointSize": 5,
+              "stacking": {
+                "mode": "none",
+                "group": "A"
+              },
+              "axisLabel": "",
+              "scaleDistribution": {
+                "type": "linear"
+              },
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "vis": false
+              }
+            },
+            "unit": "short",
+            "min": 0
+          }
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 32
+        }
+      },
+      {
+        "id": 9,
+        "title": "Economic Metrics",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "total_gdi_tokens_circulating",
+            "legendFormat": "GDI Tokens Circulating"
+          },
+          {
+            "expr": "total_gaming_rewards_distributed",
+            "legendFormat": "Gaming Rewards Distributed"
+          },
+          {
+            "expr": "average_transaction_value",
+            "legendFormat": "Avg Transaction Value"
+          },
+          {
+            "expr": "nft_marketplace_volume",
+            "legendFormat": "NFT Marketplace Volume"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "drawStyle": "line",
+              "lineInterpolation": "linear",
+              "barAlignment": 0,
+              "lineWidth": 1,
+              "fillOpacity": 10,
+              "gradientMode": "none",
+              "spanNulls": false,
+              "showPoints": "never",
+              "pointSize": 5,
+              "stacking": {
+                "mode": "none",
+                "group": "A"
+              },
+              "axisLabel": "",
+              "scaleDistribution": {
+                "type": "linear"
+              },
+              "hideFrom": {
+                "legend": false,
+                "tooltip": false,
+                "vis": false
+              }
+            },
+            "unit": "currencyGDI",
+            "min": 0
+          }
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 32
+        }
+      },
+      {
+        "id": 10,
+        "title": "System Health Alerts",
+        "type": "table",
+        "targets": [
+          {
+            "expr": "gamedin_system_alerts",
+            "format": "table",
+            "instant": true
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "thresholds"
+            },
+            "custom": {
+              "align": "auto",
+              "displayMode": "auto"
+            },
+            "thresholds": {
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "red",
+                  "value": 80
+                }
+              ]
+            }
+          }
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 24,
+          "x": 0,
+          "y": 40
+        }
+      },
+      {
+        "id": 11,
+        "title": "Top Players by Performance",
+        "type": "table",
+        "targets": [
+          {
+            "expr": "topk(10, gamedin_player_win_rate)",
+            "format": "table",
+            "instant": true
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "align": "auto",
+              "displayMode": "auto"
+            }
+          }
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 48
+        }
+      },
+      {
+        "id": 12,
+        "title": "Recent Blockchain Transactions",
+        "type": "table",
+        "targets": [
+          {
+            "expr": "blockchain_recent_transactions",
+            "format": "table",
+            "instant": true
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "align": "auto",
+              "displayMode": "auto"
+            }
+          }
+        },
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 48
+        }
+      },
+      {
+        "id": 13,
+        "title": "AI Service Status",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "nova_sanctum_service_status",
+            "legendFormat": "NovaSanctum"
+          },
+          {
+            "expr": "athena_mist_service_status",
+            "legendFormat": "AthenaMist"
+          },
+          {
+            "expr": "unified_ai_service_status",
+            "legendFormat": "Unified AI"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "thresholds"
+            },
+            "custom": {
+              "displayMode": "list",
+              "orientation": "horizontal"
+            },
+            "thresholds": {
+              "steps": [
+                {
+                  "color": "red",
+                  "value": null
+                },
+                {
+                  "color": "green",
+                  "value": 1
+                }
+              ]
+            }
+          }
+        },
+        "gridPos": {
+          "h": 4,
+          "w": 24,
+          "x": 0,
+          "y": 56
+        }
+      },
+      {
+        "id": 14,
+        "title": "Cross-Chain Bridge Status",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "bridge_pending_requests",
+            "legendFormat": "Pending Requests"
+          },
+          {
+            "expr": "bridge_processed_requests",
+            "legendFormat": "Processed Requests"
+          },
+          {
+            "expr": "bridge_success_rate",
+            "legendFormat": "Success Rate"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "displayMode": "list",
+              "orientation": "horizontal"
+            }
+          }
+        },
+        "gridPos": {
+          "h": 4,
+          "w": 24,
+          "x": 0,
+          "y": 60
+        }
+      }
+    ],
+    "time": {
+      "from": "now-1h",
+      "to": "now"
+    },
+    "timepicker": {
+      "refresh_intervals": [
+        "5s",
+        "10s",
+        "30s",
+        "1m",
+        "5m",
+        "15m",
+        "30m",
+        "1h",
+        "2h",
+        "1d"
+      ]
+    },
+    "templating": {
+      "list": [
+        {
+          "name": "game_type",
+          "type": "query",
+          "query": "gamedin_game_types",
+          "refresh": 2,
+          "includeAll": true,
+          "multi": true
+        },
+        {
+          "name": "network",
+          "type": "query",
+          "query": "blockchain_networks",
+          "refresh": 2,
+          "includeAll": true,
+          "multi": false
+        }
+      ]
+    },
+    "annotations": {
+      "list": [
+        {
+          "name": "Deployments",
+          "datasource": "Prometheus",
+          "expr": "changes(gamedin_version[1m]) > 0",
+          "iconColor": "red",
+          "titleFormat": "Deployment",
+          "textFormat": "New version deployed"
+        },
+        {
+          "name": "Alerts",
+          "datasource": "Prometheus",
+          "expr": "gamedin_critical_alerts",
+          "iconColor": "red",
+          "titleFormat": "Critical Alert",
+          "textFormat": "Critical system alert triggered"
+        }
+      ]
+    },
+    "refresh": "30s",
+    "schemaVersion": 27,
+    "version": 1,
+    "links": [
+      {
+        "title": "GameDin L3 Documentation",
+        "url": "https://docs.gamedin.io",
+        "targetBlank": true
+      },
+      {
+        "title": "API Documentation",
+        "url": "https://api.gamedin.io/docs",
+        "targetBlank": true
+      }
+    ]
+  }
+} 
