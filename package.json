@@ -1,17 +1,19 @@
 {
-  "name": "gdi-token-deployment",
+  "name": "gamedin-l3-gaming-blockchain",
   "version": "1.0.0",
-  "description": "Complete deployment infrastructure for GameDin (GDI) token on Solana with Raydium liquidity pool",
-  "main": "scripts/deploy-gdi-complete.js",
+  "description": "Complete GameDin Layer 3 Gaming Blockchain with NovaSanctum AI Integration",
+  "main": "src/index.ts",
   "scripts": {
-    "deploy": "node scripts/deploy-gdi-complete.js",
-    "deploy:metadata": "node scripts/deploy-metadata.js",
-    "deploy:pool": "node scripts/create-raydium-pool.js",
-    "revoke": "node scripts/revoke-authorities.js",
-    "status": "node scripts/deploy-gdi-complete.js --status",
-    "check-authorities": "node scripts/revoke-authorities.js --check",
-    "verify": "node scripts/verify-setup.js",
-    "build": "tsc",
+    "build": "npx hardhat compile && tsc",
+    "test": "npx hardhat test",
+    "deploy:local": "npx hardhat deploy --network localhost",
+    "deploy:testnet": "npx hardhat deploy --network testnet",
+    "deploy:mainnet": "npx hardhat deploy --network mainnet",
+    "start:node": "npx hardhat node",
+    "start:bridge": "node src/bridge/relayer.js",
+    "start:gaming": "node src/gaming/real-time-engine.js",
+    "start:ai": "node src/ai/nova-sanctum.js",
+    "health:check": "node src/monitoring/health-checker.js",
     "dev": "ts-node src/cli/gdi-cli.ts",
     "gdi:balance": "ts-node src/cli/gdi-cli.ts balance",
     "gdi:send": "ts-node src/cli/gdi-cli.ts send",
@@ -20,17 +22,31 @@
     "gdi:history": "ts-node src/cli/gdi-cli.ts history",
     "gdi:check": "ts-node src/cli/gdi-cli.ts check",
     "gdi:help": "ts-node src/cli/gdi-cli.ts help",
-    "test": "echo \"No tests specified\" && exit 0"
+    "deploy:complete": "node scripts/deploy-gdi-complete.js",
+    "deploy:metadata": "node scripts/deploy-metadata.js",
+    "deploy:pool": "node scripts/create-raydium-pool.js",
+    "revoke": "node scripts/revoke-authorities.js",
+    "status": "node scripts/deploy-gdi-complete.js --status",
+    "check-authorities": "node scripts/revoke-authorities.js --check",
+    "verify": "node scripts/verify-setup.js",
+    "l3:deploy": "./GameDin_Complete_Launch.sh",
+    "l3:infrastructure": "./GameDin_Infrastructure_Setup.sh",
+    "l3:instant": "./GameDin_Instant_Deploy.sh",
+    "l3:quick": "./GameDin_L3_Quick_Start.sh"
   },
   "keywords": [
-    "solana",
-    "token",
-    "metaplex",
-    "raydium",
-    "defi",
+    "blockchain",
     "gaming",
+    "layer3",
+    "ai",
+    "novasanctum",
+    "ethereum",
+    "base",
+    "defi",
     "gdi",
-    "gamedin"
+    "gamedin",
+    "websocket",
+    "realtime"
   ],
   "author": "GameDin Team",
   "license": "MIT",
@@ -43,27 +59,55 @@
     "@solana/wallet-adapter-react-ui": "^0.9.39",
     "@solana/wallet-adapter-wallets": "^0.19.37",
     "@solana/web3.js": "^1.98.2",
+    "@openzeppelin/contracts": "^4.9.3",
+    "@openzeppelin/hardhat-upgrades": "^1.28.0",
+    "ethers": "^5.7.2",
+    "hardhat": "^2.17.2",
+    "hardhat-deploy": "^0.11.34",
+    "ws": "^8.13.0",
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "helmet": "^7.1.0",
+    "compression": "^1.7.4",
+    "redis": "^4.6.10",
+    "pg": "^8.11.3",
+    "sequelize": "^6.35.0",
+    "prometheus-client": "^15.1.0",
+    "grafana-api": "^1.0.1",
     "autoprefixer": "^10.4.21",
     "bs58": "^5.0.0",
     "postcss": "^8.5.6",
     "tailwindcss": "^4.1.11",
-    "tweetnacl": "^1.0.3"
+    "tweetnacl": "^1.0.3",
+    "axios": "^1.6.0",
+    "node-cron": "^3.0.3",
+    "winston": "^3.11.0",
+    "dotenv": "^16.3.1"
   },
   "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^3.0.2",
     "@types/node": "^20.10.0",
-    "dotenv": "^16.3.1",
+    "@types/ws": "^8.5.10",
+    "@types/express": "^4.17.21",
+    "@types/cors": "^2.8.17",
+    "@types/compression": "^1.7.5",
+    "@types/pg": "^8.10.9",
     "ts-node": "^10.9.0",
-    "typescript": "^5.3.0"
+    "typescript": "^5.3.0",
+    "chai": "^4.3.10",
+    "mocha": "^10.2.0",
+    "@types/chai": "^4.3.11",
+    "@types/mocha": "^10.0.6"
   },
   "engines": {
-    "node": ">=16.0.0"
+    "node": ">=18.0.0"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/gamedin/gdi-token-deployment.git"
+    "url": "https://github.com/gamedin/gamedin-l3-gaming-blockchain.git"
   },
   "bugs": {
-    "url": "https://github.com/gamedin/gdi-token-deployment/issues"
+    "url": "https://github.com/gamedin/gamedin-l3-gaming-blockchain/issues"
   },
   "homepage": "https://gamedin.io"
 }

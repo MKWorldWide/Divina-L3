@@ -25,6 +25,9 @@ import { UnifiedAIService } from '../ai/UnifiedAIService';
 import { DatabaseService } from '../database/DatabaseService';
 import { BlockchainService } from '../blockchain/BlockchainService';
 import { Logger } from '../utils/Logger';
+import { ethers } from 'ethers';
+import Redis from 'redis';
+import { promisify } from 'util';
 
 /**
  * @class RealTimeGamingEngine
@@ -63,8 +66,24 @@ export class RealTimeGamingEngine extends EventEmitter {
         averageLatency: 0,
         tps: 0,
         aiRequests: 0,
-        fraudDetections: 0
+        fraudDetections: 0,
+        totalConnections: 0,
+        totalActions: 0,
+        peakTPS: 0
     };
+
+    private provider: ethers.providers.JsonRpcProvider;
+    private redis: Redis.RedisClient;
+    private gameRooms: Map<string, GameRoom> = new Map();
+    private playerConnections: Map<string, WebSocket> = new Map();
+    private novaSanctumOracle: ethers.Contract;
+    private gameDinToken: ethers.Contract;
+    
+    // Configuration
+    private readonly MAX_CONNECTIONS = 10000;
+    private readonly HEARTBEAT_INTERVAL = 30000;
+    private readonly GAME_TIMEOUT = 300000; // 5 minutes
+    private readonly MAX_PLAYERS_PER_ROOM = 100;
 
     constructor(config: GameConfig) {
         super();
@@ -83,8 +102,32 @@ export class RealTimeGamingEngine extends EventEmitter {
         // Initialize WebSocket server
         this.wss = new WebSocket.Server({ 
             port: config.websocketPort,
-            perMessageDeflate: false // Disable compression for better performance
+            perMessageDeflate: false, // Disable compression for better performance
+            maxPayload: 1024 * 1024 // 1MB max payload
         });
+        
+        // Initialize Ethereum provider
+        this.provider = new ethers.providers.JsonRpcProvider(config.rpcUrl);
+        
+        // Initialize Redis for caching
+        this.redis = Redis.createClient(config.redisUrl);
+        
+        // Initialize smart contracts
+        this.novaSanctumOracle = new ethers.Contract(
+            config.novaSanctumAddress,
+            require('../../abis/NovaSanctumOracle.json'),
+            this.provider
+        );
+        
+        this.gameDinToken = new ethers.Contract(
+            config.gameDinTokenAddress,
+            require('../../abis/GameDinToken.json'),
+            this.provider
+        );
+        
+        this.setupWebSocketHandlers();
+        this.startHeartbeat();
+        this.startMetricsCollection();
         
         this.logger.info('RealTimeGamingEngine initialized');
     }
@@ -1037,5 +1080,608 @@ export class RealTimeGamingEngine extends EventEmitter {
      */
     isEngineRunning(): boolean {
         return this.isRunning;
+    }
+
+    /**
+     * Setup WebSocket event handlers
+     */
+    private setupWebSocketHandlers(): void {
+        this.wss.on('connection', (ws: WebSocket, req) => {
+            this.handleConnection(ws, req);
+        });
+
+        this.wss.on('error', (error) => {
+            console.error('WebSocket server error:', error);
+            this.emit('error', error);
+        });
+    }
+
+    /**
+     * Handle new WebSocket connection
+     */
+    private handleConnection(ws: WebSocket, req: any): void {
+        if (this.playerConnections.size >= this.MAX_CONNECTIONS) {
+            ws.close(1013, 'Maximum connections reached');
+            return;
+        }
+
+        const playerId = this.extractPlayerId(req);
+        if (!playerId) {
+            ws.close(1008, 'Invalid player ID');
+            return;
+        }
+
+        // Store connection
+        this.playerConnections.set(playerId, ws);
+        this.metrics.totalConnections++;
+
+        // Setup connection handlers
+        ws.on('message', async (data: WebSocket.Data) => {
+            try {
+                const message = JSON.parse(data.toString());
+                await this.handleGameMessage(playerId, message);
+            } catch (error) {
+                console.error('Error handling game message:', error);
+                this.sendError(ws, 'Invalid message format');
+            }
+        });
+
+        ws.on('close', () => {
+            this.handlePlayerDisconnect(playerId);
+        });
+
+        ws.on('error', (error) => {
+            console.error(`WebSocket error for player ${playerId}:`, error);
+            this.handlePlayerDisconnect(playerId);
+        });
+
+        // Send welcome message
+        this.sendMessage(ws, {
+            type: 'welcome',
+            playerId: playerId,
+            timestamp: Date.now(),
+            serverInfo: {
+                version: '1.0.0',
+                maxPlayers: this.MAX_PLAYERS_PER_ROOM,
+                heartbeatInterval: this.HEARTBEAT_INTERVAL
+            }
+        });
+
+        console.log(`🎮 Player ${playerId} connected`);
+    }
+
+    /**
+     * Handle game messages from players
+     */
+    private async handleGameMessage(playerId: string, message: any): Promise<void> {
+        const startTime = Date.now();
+        
+        try {
+            switch (message.type) {
+                case 'joinGame':
+                    await this.handleJoinGame(playerId, message.gameId, message.gameType);
+                    break;
+                    
+                case 'gameAction':
+                    await this.handleGameAction(playerId, message);
+                    break;
+                    
+                case 'leaveGame':
+                    await this.handleLeaveGame(playerId, message.gameId);
+                    break;
+                    
+                case 'heartbeat':
+                    this.handleHeartbeat(playerId);
+                    break;
+                    
+                case 'getGameState':
+                    await this.handleGetGameState(playerId, message.gameId);
+                    break;
+                    
+                default:
+                    this.sendError(this.playerConnections.get(playerId), 'Unknown message type');
+            }
+            
+            // Update latency metrics
+            const latency = Date.now() - startTime;
+            this.updateLatencyMetrics(latency);
+            
+        } catch (error) {
+            console.error(`Error processing message from ${playerId}:`, error);
+            this.sendError(this.playerConnections.get(playerId), 'Internal server error');
+        }
+    }
+
+    /**
+     * Handle player joining a game
+     */
+    private async handleJoinGame(playerId: string, gameId: string, gameType: string): Promise<void> {
+        let room = this.gameRooms.get(gameId);
+        
+        if (!room) {
+            // Create new game room
+            room = {
+                gameId: gameId,
+                players: new Set(),
+                gameState: {
+                    gameId: gameId,
+                    players: new Map(),
+                    gameData: {},
+                    lastUpdate: Date.now(),
+                    status: 'waiting'
+                },
+                lastActivity: Date.now(),
+                maxPlayers: this.MAX_PLAYERS_PER_ROOM,
+                gameType: gameType
+            };
+            
+            this.gameRooms.set(gameId, room);
+            this.metrics.activeGames++;
+        }
+        
+        // Check if room is full
+        if (room.players.size >= room.maxPlayers) {
+            this.sendError(this.playerConnections.get(playerId), 'Game room is full');
+            return;
+        }
+        
+        // Add player to room
+        room.players.add(playerId);
+        room.lastActivity = Date.now();
+        
+        // Initialize player state
+        const playerState: PlayerState = {
+            address: playerId,
+            position: { x: 0, y: 0 },
+            health: 100,
+            score: 0,
+            lastAction: Date.now(),
+            isConnected: true
+        };
+        
+        room.gameState.players.set(playerId, playerState);
+        
+        // Notify all players in the room
+        this.broadcastToRoom(gameId, {
+            type: 'playerJoined',
+            playerId: playerId,
+            gameState: this.sanitizeGameState(room.gameState),
+            timestamp: Date.now()
+        });
+        
+        // Send confirmation to joining player
+        this.sendMessage(this.playerConnections.get(playerId), {
+            type: 'gameJoined',
+            gameId: gameId,
+            gameState: this.sanitizeGameState(room.gameState),
+            timestamp: Date.now()
+        });
+        
+        console.log(`🎮 Player ${playerId} joined game ${gameId}`);
+    }
+
+    /**
+     * Handle game actions from players
+     */
+    private async handleGameAction(playerId: string, message: any): Promise<void> {
+        const { gameId, actionType, data } = message;
+        const room = this.gameRooms.get(gameId);
+        
+        if (!room || !room.players.has(playerId)) {
+            this.sendError(this.playerConnections.get(playerId), 'Not in game');
+            return;
+        }
+        
+        // Validate action with NovaSanctum AI
+        const aiValidation = await this.validateActionWithAI(playerId, gameId, actionType, data);
+        
+        if (!aiValidation.isValid) {
+            this.sendError(this.playerConnections.get(playerId), `Action rejected: ${aiValidation.reason}`);
+            return;
+        }
+        
+        // Process game action
+        const gameAction: GameAction = {
+            type: actionType,
+            player: playerId,
+            gameId: gameId,
+            data: data,
+            timestamp: Date.now()
+        };
+        
+        // Update game state based on action
+        await this.processGameAction(room, gameAction);
+        
+        // Broadcast updated state to all players
+        this.broadcastToRoom(gameId, {
+            type: 'gameStateUpdate',
+            gameState: this.sanitizeGameState(room.gameState),
+            lastAction: gameAction,
+            timestamp: Date.now()
+        });
+        
+        // Submit action to blockchain for rewards
+        await this.submitActionToBlockchain(gameAction, aiValidation);
+        
+        this.metrics.totalActions++;
+        console.log(`🎮 Action processed: ${actionType} by ${playerId} in ${gameId}`);
+    }
+
+    /**
+     * Validate action with NovaSanctum AI
+     */
+    private async validateActionWithAI(
+        playerId: string,
+        gameId: string,
+        actionType: string,
+        data: any
+    ): Promise<NovaSanctumResponse> {
+        try {
+            // Call NovaSanctum Oracle contract
+            const isValid = await this.novaSanctumOracle.validatePlayerAction(
+                playerId,
+                gameId,
+                actionType,
+                0, // XP amount (calculated later)
+                0, // Token amount (calculated later)
+                ethers.utils.toUtf8Bytes(JSON.stringify(data))
+            );
+            
+            // In a real implementation, you would get more detailed analysis
+            return {
+                isValid: isValid,
+                fraudScore: isValid ? 10 : 80,
+                trustScore: isValid ? 90 : 20,
+                confidence: 85,
+                reason: isValid ? 'Action validated' : 'Suspicious activity detected'
+            };
+        } catch (error) {
+            console.error('AI validation error:', error);
+            // Fallback to basic validation
+            return {
+                isValid: true,
+                fraudScore: 5,
+                trustScore: 95,
+                confidence: 70,
+                reason: 'AI validation failed, using fallback'
+            };
+        }
+    }
+
+    /**
+     * Process game action and update state
+     */
+    private async processGameAction(room: GameRoom, action: GameAction): Promise<void> {
+        const playerState = room.gameState.players.get(action.player);
+        if (!playerState) return;
+        
+        // Update player state based on action type
+        switch (action.type) {
+            case 'move':
+                playerState.position = action.data.position;
+                break;
+                
+            case 'attack':
+                const target = room.gameState.players.get(action.data.target);
+                if (target) {
+                    target.health -= action.data.damage;
+                    if (target.health <= 0) {
+                        playerState.score += 100;
+                    }
+                }
+                break;
+                
+            case 'collect':
+                playerState.score += action.data.value;
+                break;
+                
+            case 'heal':
+                playerState.health = Math.min(100, playerState.health + action.data.amount);
+                break;
+        }
+        
+        playerState.lastAction = Date.now();
+        room.gameState.lastUpdate = Date.now();
+        room.lastActivity = Date.now();
+    }
+
+    /**
+     * Submit action to blockchain for rewards
+     */
+    private async submitActionToBlockchain(
+        action: GameAction,
+        aiValidation: NovaSanctumResponse
+    ): Promise<void> {
+        try {
+            // Calculate rewards based on action and AI validation
+            const xpReward = this.calculateXPReward(action, aiValidation);
+            const tokenReward = this.calculateTokenReward(action, aiValidation);
+            
+            // Submit to GameDin Token contract
+            // Note: In production, this would be done by a relayer or the game contract
+            console.log(`💰 Rewards calculated: ${xpReward} XP, ${tokenReward} tokens for ${action.player}`);
+            
+        } catch (error) {
+            console.error('Error submitting to blockchain:', error);
+        }
+    }
+
+    /**
+     * Calculate XP reward for an action
+     */
+    private calculateXPReward(action: GameAction, aiValidation: NovaSanctumResponse): number {
+        let baseXP = 10;
+        
+        switch (action.type) {
+            case 'attack':
+                baseXP = 20;
+                break;
+            case 'collect':
+                baseXP = 15;
+                break;
+            case 'heal':
+                baseXP = 5;
+                break;
+        }
+        
+        // Adjust based on AI trust score
+        const trustMultiplier = aiValidation.trustScore / 100;
+        return Math.floor(baseXP * trustMultiplier);
+    }
+
+    /**
+     * Calculate token reward for an action
+     */
+    private calculateTokenReward(action: GameAction, aiValidation: NovaSanctumResponse): number {
+        let baseTokens = 1;
+        
+        switch (action.type) {
+            case 'attack':
+                baseTokens = 2;
+                break;
+            case 'collect':
+                baseTokens = 3;
+                break;
+            case 'heal':
+                baseTokens = 1;
+                break;
+        }
+        
+        // Adjust based on AI fraud score (lower fraud = higher reward)
+        const fraudMultiplier = (100 - aiValidation.fraudScore) / 100;
+        return Math.floor(baseTokens * fraudMultiplier);
+    }
+
+    /**
+     * Handle player leaving a game
+     */
+    private async handleLeaveGame(playerId: string, gameId: string): Promise<void> {
+        const room = this.gameRooms.get(gameId);
+        if (!room) return;
+        
+        room.players.delete(playerId);
+        room.gameState.players.delete(playerId);
+        room.lastActivity = Date.now();
+        
+        // Notify other players
+        this.broadcastToRoom(gameId, {
+            type: 'playerLeft',
+            playerId: playerId,
+            gameState: this.sanitizeGameState(room.gameState),
+            timestamp: Date.now()
+        });
+        
+        // Clean up empty rooms
+        if (room.players.size === 0) {
+            this.gameRooms.delete(gameId);
+            this.metrics.activeGames--;
+        }
+        
+        console.log(`🎮 Player ${playerId} left game ${gameId}`);
+    }
+
+    /**
+     * Handle player disconnection
+     */
+    private handlePlayerDisconnect(playerId: string): void {
+        this.playerConnections.delete(playerId);
+        
+        // Remove player from all games
+        for (const [gameId, room] of this.gameRooms) {
+            if (room.players.has(playerId)) {
+                const playerState = room.gameState.players.get(playerId);
+                if (playerState) {
+                    playerState.isConnected = false;
+                }
+            }
+        }
+        
+        console.log(`🎮 Player ${playerId} disconnected`);
+    }
+
+    /**
+     * Handle heartbeat from players
+     */
+    private handleHeartbeat(playerId: string): void {
+        const ws = this.playerConnections.get(playerId);
+        if (ws) {
+            this.sendMessage(ws, {
+                type: 'heartbeat',
+                timestamp: Date.now()
+            });
+        }
+    }
+
+    /**
+     * Handle get game state request
+     */
+    private async handleGetGameState(playerId: string, gameId: string): Promise<void> {
+        const room = this.gameRooms.get(gameId);
+        if (!room) {
+            this.sendError(this.playerConnections.get(playerId), 'Game not found');
+            return;
+        }
+        
+        this.sendMessage(this.playerConnections.get(playerId), {
+            type: 'gameState',
+            gameId: gameId,
+            gameState: this.sanitizeGameState(room.gameState),
+            timestamp: Date.now()
+        });
+    }
+
+    /**
+     * Broadcast message to all players in a room
+     */
+    private broadcastToRoom(gameId: string, message: any): void {
+        const room = this.gameRooms.get(gameId);
+        if (!room) return;
+        
+        const messageStr = JSON.stringify(message);
+        
+        for (const playerId of room.players) {
+            const ws = this.playerConnections.get(playerId);
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(messageStr);
+            }
+        }
+    }
+
+    /**
+     * Send message to a specific WebSocket
+     */
+    private sendMessage(ws: WebSocket, message: any): void {
+        if (ws && ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify(message));
+        }
+    }
+
+    /**
+     * Send error message to a WebSocket
+     */
+    private sendError(ws: WebSocket, error: string): void {
+        this.sendMessage(ws, {
+            type: 'error',
+            error: error,
+            timestamp: Date.now()
+        });
+    }
+
+    /**
+     * Sanitize game state for transmission
+     */
+    private sanitizeGameState(gameState: GameState): any {
+        const sanitized: any = {
+            gameId: gameState.gameId,
+            status: gameState.status,
+            lastUpdate: gameState.lastUpdate,
+            players: {}
+        };
+        
+        for (const [playerId, playerState] of gameState.players) {
+            sanitized.players[playerId] = {
+                position: playerState.position,
+                health: playerState.health,
+                score: playerState.score,
+                isConnected: playerState.isConnected
+            };
+        }
+        
+        return sanitized;
+    }
+
+    /**
+     * Extract player ID from request
+     */
+    private extractPlayerId(req: any): string | null {
+        // In production, this would validate JWT tokens or other auth
+        const url = new URL(req.url, 'http://localhost');
+        return url.searchParams.get('playerId');
+    }
+
+    /**
+     * Start heartbeat mechanism
+     */
+    private startHeartbeat(): void {
+        setInterval(() => {
+            const heartbeat = {
+                type: 'heartbeat',
+                timestamp: Date.now(),
+                metrics: this.metrics
+            };
+            
+            // Broadcast heartbeat to all connected players
+            for (const [playerId, ws] of this.playerConnections) {
+                this.sendMessage(ws, heartbeat);
+            }
+        }, this.HEARTBEAT_INTERVAL);
+    }
+
+    /**
+     * Start metrics collection
+     */
+    private startMetricsCollection(): void {
+        setInterval(() => {
+            // Calculate current TPS
+            const currentTPS = this.metrics.totalActions / 60; // Actions per minute
+            this.metrics.peakTPS = Math.max(this.metrics.peakTPS, currentTPS);
+            
+            // Reset action counter
+            this.metrics.totalActions = 0;
+            
+            // Emit metrics
+            this.emit('metrics', this.metrics);
+            
+            console.log(`📊 Gaming Metrics: ${this.metrics.activeGames} active games, ${this.playerConnections.size} connected players, ${this.metrics.averageLatency}ms avg latency`);
+        }, 60000); // Every minute
+    }
+
+    /**
+     * Update latency metrics
+     */
+    private updateLatencyMetrics(latency: number): void {
+        this.metrics.averageLatency = 
+            (this.metrics.averageLatency + latency) / 2;
+    }
+
+    /**
+     * Get current metrics
+     */
+    public getMetrics(): any {
+        return { ...this.metrics };
+    }
+
+    /**
+     * Get active games count
+     */
+    public getActiveGamesCount(): number {
+        return this.gameRooms.size;
+    }
+
+    /**
+     * Get connected players count
+     */
+    public getConnectedPlayersCount(): number {
+        return this.playerConnections.size;
+    }
+
+    /**
+     * Graceful shutdown
+     */
+    public async shutdown(): Promise<void> {
+        console.log('🔄 Shutting down GameDin Real-Time Gaming Engine...');
+        
+        // Close all WebSocket connections
+        for (const [playerId, ws] of this.playerConnections) {
+            ws.close(1000, 'Server shutdown');
+        }
+        
+        // Close WebSocket server
+        this.wss.close();
+        
+        // Close Redis connection
+        this.redis.quit();
+        
+        console.log('✅ GameDin Real-Time Gaming Engine shutdown complete');
     }
 } 
