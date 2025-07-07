@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.19;
+pragma solidity ^0.8.20;
 
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
-import "@openzeppelin/contracts/utils/Counters.sol";
-import "@openzeppelin/contracts/security/Pausable.sol";
+
+import "@openzeppelin/contracts/utils/Pausable.sol";
 
 /**
  * @title Bridge
@@ -15,7 +15,8 @@ import "@openzeppelin/contracts/security/Pausable.sol";
  * @dev Supports tokens, NFTs, and gaming assets
  */
 contract Bridge is ReentrancyGuard, Ownable, Pausable {
-    using Counters for Counters.Counter;
+    constructor(address initialOwner) Ownable(initialOwner) {}
+    
 
     // ============ STRUCTS ============
     
@@ -71,7 +72,7 @@ contract Bridge is ReentrancyGuard, Ownable, Pausable {
 
     // ============ STATE VARIABLES ============
     
-    Counters.Counter private _requestIds;
+    uint256 private _requestIds;
     
     mapping(uint256 => BridgeRequest) public bridgeRequests;
     mapping(uint256 => ChainConfig) public supportedChains;
@@ -131,27 +132,6 @@ contract Bridge is ReentrancyGuard, Ownable, Pausable {
     modifier onlyActiveChain(uint256 _chainId) {
         require(supportedChains[_chainId].isActive, "Chain not active");
         _;
-    }
-
-    // ============ CONSTRUCTOR ============
-    
-    constructor(
-        uint256 _chainId,
-        address _gdiToken,
-        address _gamingCore
-    ) {
-        chainId = _chainId;
-        gdiToken = _gdiToken;
-        gamingCore = _gamingCore;
-        
-        // Add current chain as supported
-        supportedChains[_chainId] = ChainConfig({
-            isSupported: true,
-            minConfirmations: 12,
-            maxGasLimit: 500000,
-            bridgeFee: bridgeFee,
-            isActive: true
-        });
     }
 
     // ============ BRIDGE FUNCTIONS ============
@@ -288,8 +268,8 @@ contract Bridge is ReentrancyGuard, Ownable, Pausable {
         uint256 amount,
         uint256 tokenId
     ) internal {
-        _requestIds.increment();
-        uint256 requestId = _requestIds.current();
+        _requestIds++;
+        uint256 requestId = _requestIds;
         
         bytes32 hash = keccak256(
             abi.encodePacked(
@@ -563,7 +543,18 @@ contract Bridge is ReentrancyGuard, Ownable, Pausable {
     /**
      * @dev Get bridge request details
      * @param requestId Request ID
-     * @return Request details
+     * @return sender Sender address
+     * @return recipient Recipient address
+     * @return sourceChainId Source chain ID
+     * @return destinationChainId Destination chain ID
+     * @return assetType Asset type
+     * @return assetAddress Asset address
+     * @return amount Amount
+     * @return tokenId Token ID
+     * @return status Request status
+     * @return timestamp Timestamp
+     * @return processedAt Processed timestamp
+     * @return relayer Relayer address
      */
     function getBridgeRequest(uint256 requestId)
         external
@@ -603,7 +594,11 @@ contract Bridge is ReentrancyGuard, Ownable, Pausable {
     /**
      * @dev Get chain configuration
      * @param _chainId Chain ID
-     * @return Chain configuration
+     * @return isSupported Whether supported
+     * @return minConfirmations Minimum confirmations
+     * @return maxGasLimit Maximum gas limit
+     * @return bridgeFee Bridge fee
+     * @return isActive Whether active
      */
     function getChainConfig(uint256 _chainId)
         external
@@ -629,7 +624,11 @@ contract Bridge is ReentrancyGuard, Ownable, Pausable {
     /**
      * @dev Get relayer information
      * @param relayer Relayer address
-     * @return Relayer information
+     * @return totalProcessed Total processed requests
+     * @return totalVolume Total volume
+     * @return lastActivity Last activity timestamp
+     * @return isActive Whether active
+     * @return stake Stake amount
      */
     function getRelayerInfo(address relayer)
         external
@@ -654,16 +653,16 @@ contract Bridge is ReentrancyGuard, Ownable, Pausable {
     
     /**
      * @dev Get total requests count
-     * @return Total requests
+     * @return total Total requests
      */
     function getTotalRequests() external view returns (uint256) {
-        return _requestIds.current();
+        return _requestIds;
     }
     
     /**
      * @dev Check if address is authorized relayer
      * @param relayer Relayer address
-     * @return True if authorized
+     * @return isAuthorized True if authorized
      */
     function isAuthorizedRelayer(address relayer) external view returns (bool) {
         return authorizedRelayers[relayer];
@@ -672,11 +671,11 @@ contract Bridge is ReentrancyGuard, Ownable, Pausable {
     /**
      * @dev Get pending requests for a chain
      * @param _chainId Chain ID
-     * @return Array of pending request IDs
+     * @return requests Array of pending request IDs
      */
     function getPendingRequests(uint256 _chainId) external view returns (uint256[] memory) {
         uint256 count = 0;
-        uint256 total = _requestIds.current();
+        uint256 total = _requestIds;
         
         // Count pending requests
         for (uint256 i = 1; i <= total; i++) {

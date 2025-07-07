@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.19;
+pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-import "@openzeppelin/contracts/security/Pausable.sol";
-import "@openzeppelin/contracts/utils/Counters.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/utils/Pausable.sol";
+
 
 /**
  * @title NovaSanctum AI Oracle
@@ -13,7 +13,20 @@ import "@openzeppelin/contracts/utils/Counters.sol";
  * @notice Provides real-time AI validation, fraud detection, and consensus optimization
  */
 contract NovaSanctumOracle is Ownable, ReentrancyGuard, Pausable {
-    using Counters for Counters.Counter;
+    constructor(address initialOwner) Ownable(initialOwner) {
+        aiResponseTimeout = 1000; // 1 second timeout
+        lastOptimizationUpdate = block.timestamp;
+        
+        // Initialize default consensus optimization
+        currentOptimization = ConsensusOptimization({
+            optimalThreshold: 67,      // 67% for gaming
+            recommendedValidators: 21,  // 21 validators
+            expectedFinality: 200,     // 200ms finality
+            fraudRisk: 10,             // Low fraud risk
+            shouldAdjust: false
+        });
+    }
+    
 
     // =============================================================================
     // STRUCTS AND ENUMS
@@ -87,8 +100,8 @@ contract NovaSanctumOracle is Ownable, ReentrancyGuard, Pausable {
     uint256 public averageResponseTime;
     
     // Counters
-    Counters.Counter private _analysisCounter;
-    Counters.Counter private _optimizationCounter;
+    uint256 private _analysisCounter;
+    uint256 private _optimizationCounter;
     
     // =============================================================================
     // EVENTS
@@ -139,23 +152,7 @@ contract NovaSanctumOracle is Ownable, ReentrancyGuard, Pausable {
     event AuthorizedCallerAdded(address indexed caller, address indexed addedBy);
     event AuthorizedCallerRemoved(address indexed caller, address indexed removedBy);
     
-    // =============================================================================
-    // CONSTRUCTOR
-    // =============================================================================
-    
-    constructor() {
-        aiResponseTimeout = 1000; // 1 second timeout
-        lastOptimizationUpdate = block.timestamp;
-        
-        // Initialize default consensus optimization
-        currentOptimization = ConsensusOptimization({
-            optimalThreshold: 67,      // 67% for gaming
-            recommendedValidators: 21,  // 21 validators
-            expectedFinality: 200,     // 200ms finality
-            fraudRisk: 10,             // Low fraud risk
-            shouldAdjust: false
-        });
-    }
+
     
     // =============================================================================
     // AI VALIDATION FUNCTIONS
@@ -169,7 +166,7 @@ contract NovaSanctumOracle is Ownable, ReentrancyGuard, Pausable {
      * @param xpAmount XP amount
      * @param tokenAmount Token amount
      * @param gameData Additional game data
-     * @return Whether the action is valid
+     * @return isValid Whether the action is valid
      */
     function validatePlayerAction(
         address player,
@@ -233,7 +230,7 @@ contract NovaSanctumOracle is Ownable, ReentrancyGuard, Pausable {
         }
         
         totalAnalyses++;
-        _analysisCounter.increment();
+        _analysisCounter++;
         
         return analysis.isValid;
     }
@@ -390,7 +387,7 @@ contract NovaSanctumOracle is Ownable, ReentrancyGuard, Pausable {
     
     /**
      * @dev Optimize consensus parameters based on AI analysis
-     * @return Optimization result
+     * @return result Optimization result
      */
     function optimizeConsensus() external onlyAuthorizedCaller whenNotPaused returns (ConsensusOptimization memory) {
         require(block.timestamp - lastOptimizationUpdate > 300, "Too frequent optimization");
@@ -415,7 +412,7 @@ contract NovaSanctumOracle is Ownable, ReentrancyGuard, Pausable {
         
         lastOptimizationUpdate = block.timestamp;
         totalOptimizations++;
-        _optimizationCounter.increment();
+        _optimizationCounter++;
         
         emit ConsensusOptimized(
             oldOptimization.optimalThreshold,
@@ -627,7 +624,7 @@ contract NovaSanctumOracle is Ownable, ReentrancyGuard, Pausable {
     
     /**
      * @dev Get current consensus optimization
-     * @return Current optimization parameters
+     * @return params Current optimization parameters
      */
     function getCurrentOptimization() external view returns (ConsensusOptimization memory) {
         return currentOptimization;
@@ -636,7 +633,13 @@ contract NovaSanctumOracle is Ownable, ReentrancyGuard, Pausable {
     /**
      * @dev Get player behavior data
      * @param player Player address
-     * @return Player behavior data
+     * @return totalActions Total actions
+     * @return suspiciousActions Suspicious actions
+     * @return lastActionTime Last action time
+     * @return averageActionValue Average action value
+     * @return maxActionValue Maximum action value
+     * @return isFlagged Whether flagged
+     * @return flagReason Flag reason
      */
     function getPlayerBehavior(address player) external view returns (
         uint256 totalActions,
@@ -662,7 +665,11 @@ contract NovaSanctumOracle is Ownable, ReentrancyGuard, Pausable {
     /**
      * @dev Get validator metrics
      * @param validator Validator address
-     * @return Validator metrics
+     * @return uptime Uptime percentage
+     * @return responseTime Response time
+     * @return consensusParticipation Consensus participation
+     * @return trustScore Trust score
+     * @return isOptimal Whether optimal
      */
     function getValidatorMetrics(address validator) external view returns (
         uint256 uptime,
@@ -684,7 +691,12 @@ contract NovaSanctumOracle is Ownable, ReentrancyGuard, Pausable {
     /**
      * @dev Get AI analysis for a transaction
      * @param transactionHash Transaction hash
-     * @return AI analysis result
+     * @return fraudScore Fraud score
+     * @return trustScore Trust score
+     * @return isValid Whether valid
+     * @return confidence Confidence level
+     * @return reason Analysis reason
+     * @return timestamp Timestamp
      */
     function getTransactionAnalysis(bytes32 transactionHash) external view returns (
         uint256 fraudScore,

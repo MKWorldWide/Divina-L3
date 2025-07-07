@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.19;
+pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Pausable.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-import "@openzeppelin/contracts/utils/Counters.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+
 
 /**
  * @title GDIToken
@@ -14,7 +14,28 @@ import "@openzeppelin/contracts/utils/Counters.sol";
  * @dev Supports AI-powered reward distribution and gaming ecosystem integration
  */
 contract GDIToken is ERC20, ERC20Burnable, ERC20Pausable, AccessControl, ReentrancyGuard {
-    using Counters for Counters.Counter;
+    constructor(
+        string memory name,
+        string memory symbol,
+        address initialOwner,
+        address _gamingCore,
+        address _aiOracle,
+        address _treasury
+    ) ERC20(name, symbol) {
+        gamingCore = _gamingCore;
+        aiOracle = _aiOracle;
+        treasury = _treasury;
+        
+        _grantRole(DEFAULT_ADMIN_ROLE, initialOwner);
+        _grantRole(MINTER_ROLE, initialOwner);
+        _grantRole(GAMING_CORE_ROLE, _gamingCore);
+        _grantRole(AI_ORACLE_ROLE, _aiOracle);
+        _grantRole(TREASURY_ROLE, _treasury);
+        
+        // Mint initial supply to treasury
+        _mint(_treasury, INITIAL_SUPPLY);
+    }
+    
 
     // ============ ROLES ============
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
@@ -66,8 +87,8 @@ contract GDIToken is ERC20, ERC20Burnable, ERC20Pausable, AccessControl, Reentra
     mapping(uint256 => RewardPool) public rewardPools;
     mapping(uint256 => GovernanceProposal) public governanceProposals;
     
-    Counters.Counter private _proposalIds;
-    Counters.Counter private _rewardPoolIds;
+    uint256 private _proposalIds;
+    uint256 private _rewardPoolIds;
     
     uint256 public totalStaked;
     uint256 public totalRewardsDistributed;
@@ -105,25 +126,7 @@ contract GDIToken is ERC20, ERC20Burnable, ERC20Pausable, AccessControl, Reentra
         _;
     }
 
-    // ============ CONSTRUCTOR ============
-    constructor(
-        address _gamingCore,
-        address _aiOracle,
-        address _treasury
-    ) ERC20("GameDin Token", "GDI") {
-        gamingCore = _gamingCore;
-        aiOracle = _aiOracle;
-        treasury = _treasury;
-        
-        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
-        _grantRole(MINTER_ROLE, msg.sender);
-        _grantRole(GAMING_CORE_ROLE, _gamingCore);
-        _grantRole(AI_ORACLE_ROLE, _aiOracle);
-        _grantRole(TREASURY_ROLE, _treasury);
-        
-        // Mint initial supply to treasury
-        _mint(_treasury, INITIAL_SUPPLY);
-    }
+
 
     // ============ STAKING FUNCTIONS ============
     
@@ -215,7 +218,7 @@ contract GDIToken is ERC20, ERC20Burnable, ERC20Pausable, AccessControl, Reentra
     /**
      * @dev Calculate staking rewards for a user
      * @param user User address
-     * @return Rewards amount
+     * @return amount Rewards amount
      */
     function calculateStakingRewards(address user) public view returns (uint256) {
         StakingInfo storage staker = stakingInfo[user];
@@ -259,7 +262,7 @@ contract GDIToken is ERC20, ERC20Burnable, ERC20Pausable, AccessControl, Reentra
     
     /**
      * @dev Get gaming rewards pool balance
-     * @return Pool balance
+     * @return balance Pool balance
      */
     function getGamingRewardsPool() external view returns (uint256) {
         return gamingRewardsPool;
@@ -271,7 +274,7 @@ contract GDIToken is ERC20, ERC20Burnable, ERC20Pausable, AccessControl, Reentra
      * @dev Create a governance proposal
      * @param description Proposal description
      * @param duration Voting duration in seconds
-     * @return Proposal ID
+     * @return proposalId Proposal ID
      */
     function createProposal(
         string memory description,
@@ -281,8 +284,8 @@ contract GDIToken is ERC20, ERC20Burnable, ERC20Pausable, AccessControl, Reentra
         require(bytes(description).length > 0, "Description cannot be empty");
         require(duration > 0 && duration <= 7 days, "Invalid duration");
         
-        _proposalIds.increment();
-        uint256 proposalId = _proposalIds.current();
+        _proposalIds++;
+        uint256 proposalId = _proposalIds;
         
         GovernanceProposal storage proposal = governanceProposals[proposalId];
         proposal.proposalId = proposalId;
@@ -347,7 +350,14 @@ contract GDIToken is ERC20, ERC20Burnable, ERC20Pausable, AccessControl, Reentra
     /**
      * @dev Get proposal information
      * @param proposalId Proposal ID
-     * @return Proposal details
+     * @return proposer Proposer address
+     * @return description Proposal description
+     * @return forVotes For votes count
+     * @return againstVotes Against votes count
+     * @return startTime Start time
+     * @return endTime End time
+     * @return executed Whether executed
+     * @return canceled Whether canceled
      */
     function getProposal(uint256 proposalId)
         external
@@ -382,7 +392,7 @@ contract GDIToken is ERC20, ERC20Burnable, ERC20Pausable, AccessControl, Reentra
      * @dev Create a reward pool
      * @param totalRewards Total rewards in the pool
      * @param rewardRate Reward rate per second
-     * @return Pool ID
+     * @return poolId Pool ID
      */
     function createRewardPool(uint256 totalRewards, uint256 rewardRate) 
         external 
@@ -392,8 +402,8 @@ contract GDIToken is ERC20, ERC20Burnable, ERC20Pausable, AccessControl, Reentra
         require(totalRewards > 0, "Total rewards must be greater than 0");
         require(rewardRate > 0, "Reward rate must be greater than 0");
         
-        _rewardPoolIds.increment();
-        uint256 poolId = _rewardPoolIds.current();
+        _rewardPoolIds++;
+        uint256 poolId = _rewardPoolIds;
         
         RewardPool storage pool = rewardPools[poolId];
         pool.totalRewards = totalRewards;
@@ -409,7 +419,11 @@ contract GDIToken is ERC20, ERC20Burnable, ERC20Pausable, AccessControl, Reentra
     /**
      * @dev Get reward pool information
      * @param poolId Pool ID
-     * @return Pool details
+     * @return totalRewards Total rewards
+     * @return distributedRewards Distributed rewards
+     * @return lastUpdateTime Last update time
+     * @return rewardRate Reward rate
+     * @return isActive Whether active
      */
     function getRewardPool(uint256 poolId)
         external
@@ -492,20 +506,12 @@ contract GDIToken is ERC20, ERC20Burnable, ERC20Pausable, AccessControl, Reentra
     /**
      * @dev Override transfer function to check pause
      */
-    function _beforeTokenTransfer(
+    function _update(
         address from,
         address to,
         uint256 amount
-    ) internal virtual override(ERC20, ERC20Pausable) {
-        super._beforeTokenTransfer(from, to, amount);
-    }
-    
-    /**
-     * @dev Override mint function to check max supply
-     */
-    function _mint(address account, uint256 amount) internal virtual override {
-        require(totalSupply() + amount <= MAX_SUPPLY, "Exceeds max supply");
-        super._mint(account, amount);
+    ) internal virtual override(ERC20, ERC20Pausable) whenNotPaused {
+        super._update(from, to, amount);
     }
 
     // ============ VIEW FUNCTIONS ============
@@ -513,7 +519,13 @@ contract GDIToken is ERC20, ERC20Burnable, ERC20Pausable, AccessControl, Reentra
     /**
      * @dev Get staking information for a user
      * @param user User address
-     * @return Staking details
+     * @return amount Staked amount
+     * @return startTime Start time
+     * @return lastRewardTime Last reward time
+     * @return totalRewards Total rewards
+     * @return lockPeriod Lock period
+     * @return isLocked Whether locked
+     * @return pendingRewards Pending rewards
      */
     function getStakingInfo(address user)
         external
@@ -542,25 +554,25 @@ contract GDIToken is ERC20, ERC20Burnable, ERC20Pausable, AccessControl, Reentra
     
     /**
      * @dev Get total proposals count
-     * @return Total proposals
+     * @return total Total proposals
      */
     function getTotalProposals() external view returns (uint256) {
-        return _proposalIds.current();
+        return _proposalIds;
     }
     
     /**
      * @dev Get total reward pools count
-     * @return Total reward pools
+     * @return total Total reward pools
      */
     function getTotalRewardPools() external view returns (uint256) {
-        return _rewardPoolIds.current();
+        return _rewardPoolIds;
     }
     
     /**
      * @dev Check if user has voted on a proposal
      * @param proposalId Proposal ID
      * @param user User address
-     * @return True if voted
+     * @return hasVoted True if voted
      */
     function hasVoted(uint256 proposalId, address user) external view returns (bool) {
         return governanceProposals[proposalId].hasVoted[user];
@@ -570,7 +582,7 @@ contract GDIToken is ERC20, ERC20Burnable, ERC20Pausable, AccessControl, Reentra
      * @dev Get user's vote on a proposal
      * @param proposalId Proposal ID
      * @param user User address
-     * @return True if voted for, false if against
+     * @return votedFor True if voted for, false if against
      */
     function getUserVote(uint256 proposalId, address user) external view returns (bool) {
         return governanceProposals[proposalId].votedFor[user];

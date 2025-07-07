@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.19;
+pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-import "@openzeppelin/contracts/security/Pausable.sol";
-import "@openzeppelin/contracts/utils/Counters.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/utils/Pausable.sol";
+
 
 /**
  * @title GameDin Token (GDIN)
@@ -14,7 +14,23 @@ import "@openzeppelin/contracts/utils/Counters.sol";
  * @notice This token includes XP/leveling, achievements, gas sponsoring, and AI-powered features
  */
 contract GameDinToken is ERC20, Ownable, ReentrancyGuard, Pausable {
-    using Counters for Counters.Counter;
+    constructor(
+        string memory name,
+        string memory symbol,
+        address initialOwner
+    ) ERC20(name, symbol) Ownable(initialOwner) {
+        _mint(initialOwner, 1000000000 * 10**decimals()); // 1B tokens
+        gasSponsorPool = 1000000 * 10**decimals(); // 1M tokens for gas sponsoring
+        
+        // Initialize first achievement
+        _createAchievement(
+            "FIRST_STEPS",
+            "Take your first steps in the GameDin universe",
+            100, // 100 XP
+            10 * 10**decimals() // 10 tokens
+        );
+    }
+    
 
     // =============================================================================
     // STRUCTS AND ENUMS
@@ -77,14 +93,14 @@ contract GameDinToken is ERC20, Ownable, ReentrancyGuard, Pausable {
     uint256 public totalAchievementsUnlocked;
     
     // Counters
-    Counters.Counter private _achievementCounter;
-    Counters.Counter private _playerCounter;
+    uint256 private _achievementCounter;
+    uint256 private _playerCounter;
     
     // =============================================================================
     // EVENTS
     // =============================================================================
     
-    event GameAction(
+    event PlayerGameAction(
         address indexed player,
         string indexed gameId,
         string actionType,
@@ -131,19 +147,7 @@ contract GameDinToken is ERC20, Ownable, ReentrancyGuard, Pausable {
     // CONSTRUCTOR
     // =============================================================================
     
-    constructor() ERC20("GameDin Token", "GDIN") {
-        _mint(msg.sender, 1000000000 * 10**decimals()); // 1B tokens
-        gasSponsorPool = 1000000 * 10**decimals(); // 1M tokens for gas sponsoring
-        
-        // Initialize first achievement
-        _createAchievement(
-            "FIRST_STEPS",
-            "Take your first steps in the GameDin universe",
-            "Complete your first game action",
-            100, // 100 XP
-            10 * 10**decimals() // 10 tokens
-        );
-    }
+
     
     // =============================================================================
     // GAMING MECHANICS
@@ -231,7 +235,7 @@ contract GameDinToken is ERC20, Ownable, ReentrancyGuard, Pausable {
         
         playerActions[player].push(action);
         
-        emit GameAction(player, gameId, actionType, xpAmount, tokenAmount, block.timestamp);
+        emit PlayerGameAction(player, gameId, actionType, xpAmount, tokenAmount, block.timestamp);
     }
     
     /**
@@ -308,7 +312,7 @@ contract GameDinToken is ERC20, Ownable, ReentrancyGuard, Pausable {
     /**
      * @dev Get sponsored gas amount for a user
      * @param user User address
-     * @return Amount of sponsored gas
+     * @return amount Amount of sponsored gas
      */
     function getSponsoredGasAmount(address user) external view returns (uint256) {
         return sponsoredGasAmounts[user];
@@ -448,13 +452,19 @@ contract GameDinToken is ERC20, Ownable, ReentrancyGuard, Pausable {
             maxUnlocks: 0 // Unlimited by default
         });
         
-        _achievementCounter.increment();
+        _achievementCounter++;
     }
     
     /**
      * @dev Get achievement details
      * @param achievementId Achievement identifier
-     * @return Achievement details
+     * @return name Achievement name
+     * @return description Achievement description
+     * @return xpReward XP reward
+     * @return tokenReward Token reward
+     * @return isActive Whether active
+     * @return unlockCount Unlock count
+     * @return maxUnlocks Maximum unlocks
      */
     function getAchievement(bytes32 achievementId) external view returns (
         string memory name,
@@ -571,14 +581,14 @@ contract GameDinToken is ERC20, Ownable, ReentrancyGuard, Pausable {
     // =============================================================================
     
     /**
-     * @dev Override transfer to include gaming features
+     * @dev Override update to include gaming features
      */
-    function _transfer(
+    function _update(
         address from,
         address to,
         uint256 amount
     ) internal virtual override whenNotPaused {
-        super._transfer(from, to, amount);
+        super._update(from, to, amount);
         
         // Update activity for both addresses
         if (from != address(0)) {

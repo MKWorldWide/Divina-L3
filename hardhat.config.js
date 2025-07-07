@@ -2,15 +2,19 @@ require("@nomicfoundation/hardhat-toolbox");
 require("hardhat-deploy");
 require("dotenv").config();
 
+// TypeScript support for tests
+require("ts-node/register");
+
 module.exports = {
   solidity: {
-    version: "0.8.19",
+    version: "0.8.20",
     settings: {
       optimizer: {
         enabled: true,
         runs: 1000000, // Optimized for gaming contracts
       },
       viaIR: true, // Enable IR-based optimization
+      evmVersion: "paris", // Latest EVM version for better optimization
     },
   },
   networks: {
@@ -18,11 +22,13 @@ module.exports = {
       chainId: 31337,
       gasPrice: 1000000000, // 1 gwei
       blockGasLimit: 30000000, // 30M gas limit for gaming
+      allowUnlimitedContractSize: true, // Allow large contracts
     },
     localhost: {
       url: "http://127.0.0.1:8545",
       chainId: 31337,
       gasPrice: 1000000000,
+      allowUnlimitedContractSize: true,
     },
     testnet: {
       url: process.env.BASE_RPC_URL || "https://sepolia.base.org",
@@ -52,6 +58,7 @@ module.exports = {
       chainId: parseInt(process.env.CHAIN_ID || "1337420"),
       gasPrice: 1000000000, // 0.001 GDIN per transaction
       blockGasLimit: 30000000, // 30M gas for complex gaming logic
+      allowUnlimitedContractSize: true,
     },
     "gamedin-l3-testnet": {
       url: process.env.L3_TESTNET_RPC_URL || "http://localhost:8546",
@@ -59,6 +66,7 @@ module.exports = {
       chainId: parseInt(process.env.TESTNET_CHAIN_ID || "1337421"),
       gasPrice: 1000000000,
       blockGasLimit: 30000000,
+      allowUnlimitedContractSize: true,
     },
   },
   namedAccounts: {
@@ -108,9 +116,11 @@ module.exports = {
     gasPrice: 1,
     showMethodSig: true,
     showTimeSpent: true,
+    showOptimizations: true, // Show optimization details
   },
   mocha: {
-    timeout: 60000, // 60 seconds for gaming contract tests
+    timeout: 120000, // 2 minutes for complex gaming tests
+    require: ["ts-node/register"], // Enable TypeScript for tests
   },
   paths: {
     sources: "./contracts",
@@ -119,17 +129,26 @@ module.exports = {
     artifacts: "./artifacts",
     deploy: "./deploy",
   },
-  // Gaming-specific compiler settings
+  // Enhanced compiler settings for gaming optimization
   compilers: [
     {
-      version: "0.8.19",
+      version: "0.8.20",
       settings: {
         optimizer: {
           enabled: true,
-          runs: 1000000,
+          runs: 1000000, // High optimization for gaming contracts
+          details: {
+            yul: true, // Enable Yul optimizer
+            yulDetails: {
+              optimizerSteps: "u", // Ultra optimization
+            },
+          },
         },
         viaIR: true,
         evmVersion: "paris",
+        debug: {
+          revertStrings: "strip", // Remove revert strings in production
+        },
       },
     },
   ],

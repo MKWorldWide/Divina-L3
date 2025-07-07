@@ -1,4 +1,4 @@
-const { deployments, getNamedAccounts } = require("hardhat");
+const { deployments, getNamedAccounts, ethers } = require("hardhat");
 
 module.exports = async ({ getNamedAccounts, deployments }) => {
   const { deploy } = deployments;
@@ -12,9 +12,8 @@ module.exports = async ({ getNamedAccounts, deployments }) => {
   const settlement = await deploy("GameDinSettlement", {
     from: deployer,
     args: [
-      "0x4200000000000000000000000000000000000006", // Base L2 bridge
-      process.env.CHAIN_ID || "1337420",
-      process.env.INITIAL_SUPPLY || "1000000000"
+      deployer, // initialOwner
+      ethers.parseEther(process.env.INITIAL_SUPPLY || "1000000000")
     ],
     log: true,
     gasLimit: 5000000,

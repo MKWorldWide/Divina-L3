@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.19;
+pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-import "@openzeppelin/contracts/utils/Counters.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+
 import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
 
 /**
@@ -13,7 +13,50 @@ import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
  * @dev Provides real-time gaming analytics and fraud detection
  */
 contract AIOracle is Ownable, ReentrancyGuard {
-    using Counters for Counters.Counter;
+    constructor(
+        address initialOwner,
+        address _gamingCore,
+        address _novaSanctumService,
+        address _athenaMistService,
+        address _chainlinkOracle
+    ) Ownable(initialOwner) {
+        gamingCore = _gamingCore;
+        novaSanctumService = _novaSanctumService;
+        athenaMistService = _athenaMistService;
+        chainlinkOracle = _chainlinkOracle;
+        
+        // Initialize AI services
+        aiServices[AIServiceType.NOVASANCTUM] = AIService({
+            serviceName: "NovaSanctum",
+            serviceAddress: _novaSanctumService,
+            isActive: true,
+            successRate: 95,
+            totalRequests: 0,
+            lastUpdate: block.timestamp,
+            fee: 0.0005 ether
+        });
+        
+        aiServices[AIServiceType.ATHENAMIST] = AIService({
+            serviceName: "AthenaMist",
+            serviceAddress: _athenaMistService,
+            isActive: true,
+            totalRequests: 0,
+            successRate: 92,
+            lastUpdate: block.timestamp,
+            fee: 0.0005 ether
+        });
+        
+        aiServices[AIServiceType.UNIFIED] = AIService({
+            serviceName: "Unified AI",
+            serviceAddress: address(this),
+            isActive: true,
+            successRate: 98,
+            totalRequests: 0,
+            lastUpdate: block.timestamp,
+            fee: 0.001 ether
+        });
+    }
+    
 
     // ============ STRUCTS ============
     
@@ -81,7 +124,7 @@ contract AIOracle is Ownable, ReentrancyGuard {
 
     // ============ STATE VARIABLES ============
     
-    Counters.Counter private _requestIds;
+    uint256 private _requestIds;
     
     mapping(uint256 => AIRequest) public aiRequests;
     mapping(address => PlayerAnalytics) public playerAnalytics;
@@ -159,50 +202,7 @@ contract AIOracle is Ownable, ReentrancyGuard {
         _;
     }
 
-    // ============ CONSTRUCTOR ============
-    
-    constructor(
-        address _gamingCore,
-        address _novaSanctumService,
-        address _athenaMistService,
-        address _chainlinkOracle
-    ) {
-        gamingCore = _gamingCore;
-        novaSanctumService = _novaSanctumService;
-        athenaMistService = _athenaMistService;
-        chainlinkOracle = _chainlinkOracle;
-        
-        // Initialize AI services
-        aiServices[AIServiceType.NOVASANCTUM] = AIService({
-            serviceName: "NovaSanctum",
-            serviceAddress: _novaSanctumService,
-            isActive: true,
-            successRate: 95,
-            totalRequests: 0,
-            lastUpdate: block.timestamp,
-            fee: 0.0005 ether
-        });
-        
-        aiServices[AIServiceType.ATHENAMIST] = AIService({
-            serviceName: "AthenaMist",
-            serviceAddress: _athenaMistService,
-            isActive: true,
-            totalRequests: 0,
-            successRate: 92,
-            lastUpdate: block.timestamp,
-            fee: 0.0005 ether
-        });
-        
-        aiServices[AIServiceType.UNIFIED] = AIService({
-            serviceName: "Unified AI",
-            serviceAddress: address(this),
-            isActive: true,
-            successRate: 98,
-            totalRequests: 0,
-            lastUpdate: block.timestamp,
-            fee: 0.001 ether
-        });
-    }
+
 
     // ============ CORE FUNCTIONS ============
     
@@ -229,8 +229,8 @@ contract AIOracle is Ownable, ReentrancyGuard {
         require(aiServices[serviceType].isActive, "AI service not active");
         require(player != address(0), "Invalid player address");
         
-        _requestIds.increment();
-        uint256 requestId = _requestIds.current();
+        _requestIds++;
+        uint256 requestId = _requestIds;
         
         AIRequest storage request = aiRequests[requestId];
         request.requestId = requestId;
@@ -438,7 +438,7 @@ contract AIOracle is Ownable, ReentrancyGuard {
      * @dev Calculate basic fraud score
      * @param player Player address
      * @param gameId Game ID
-     * @return Fraud score (0-100)
+     * @return score Fraud score (0-100)
      */
     function _calculateFraudScore(address player, uint256 gameId) internal view returns (uint256) {
         // Simulate NovaSanctum fraud detection
@@ -456,7 +456,7 @@ contract AIOracle is Ownable, ReentrancyGuard {
      * @dev Calculate advanced fraud score
      * @param player Player address
      * @param gameId Game ID
-     * @return Advanced fraud score (0-100)
+     * @return score Advanced fraud score (0-100)
      */
     function _calculateAdvancedFraudScore(address player, uint256 gameId) internal view returns (uint256) {
         // Simulate AthenaMist advanced fraud detection
@@ -473,7 +473,7 @@ contract AIOracle is Ownable, ReentrancyGuard {
     /**
      * @dev Calculate skill level
      * @param player Player address
-     * @return Skill level (0-100)
+     * @return level Skill level (0-100)
      */
     function _calculateSkillLevel(address player) internal view returns (uint256) {
         PlayerAnalytics storage analytics = playerAnalytics[player];
@@ -489,7 +489,7 @@ contract AIOracle is Ownable, ReentrancyGuard {
     /**
      * @dev Calculate advanced skill level
      * @param player Player address
-     * @return Advanced skill level (0-100)
+     * @return level Advanced skill level (0-100)
      */
     function _calculateAdvancedSkillLevel(address player) internal view returns (uint256) {
         PlayerAnalytics storage analytics = playerAnalytics[player];
@@ -508,7 +508,7 @@ contract AIOracle is Ownable, ReentrancyGuard {
      * @dev Calculate risk assessment
      * @param player Player address
      * @param gameId Game ID
-     * @return Risk assessment (0-100)
+     * @return risk Risk assessment (0-100)
      */
     function _calculateRiskAssessment(address player, uint256 gameId) internal view returns (uint256) {
         PlayerAnalytics storage analytics = playerAnalytics[player];
@@ -530,7 +530,7 @@ contract AIOracle is Ownable, ReentrancyGuard {
      * @dev Calculate advanced risk assessment
      * @param player Player address
      * @param gameId Game ID
-     * @return Advanced risk assessment (0-100)
+     * @return risk Advanced risk assessment (0-100)
      */
     function _calculateAdvancedRiskAssessment(address player, uint256 gameId) internal view returns (uint256) {
         PlayerAnalytics storage analytics = playerAnalytics[player];
@@ -557,7 +557,7 @@ contract AIOracle is Ownable, ReentrancyGuard {
      * @dev Predict game outcome
      * @param player Player address
      * @param gameId Game ID
-     * @return Predicted outcome (0-100)
+     * @return outcome Predicted outcome (0-100)
      */
     function _predictGameOutcome(address player, uint256 gameId) internal view returns (uint256) {
         PlayerAnalytics storage analytics = playerAnalytics[player];
@@ -574,7 +574,7 @@ contract AIOracle is Ownable, ReentrancyGuard {
      * @dev Predict advanced game outcome
      * @param player Player address
      * @param gameId Game ID
-     * @return Advanced predicted outcome (0-100)
+     * @return outcome Advanced predicted outcome (0-100)
      */
     function _predictAdvancedGameOutcome(address player, uint256 gameId) internal view returns (uint256) {
         PlayerAnalytics storage analytics = playerAnalytics[player];
@@ -592,7 +592,7 @@ contract AIOracle is Ownable, ReentrancyGuard {
     /**
      * @dev Calculate player consistency
      * @param player Player address
-     * @return Consistency score (0-100)
+     * @return score Consistency score (0-100)
      */
     function _calculateConsistency(address player) internal view returns (uint256) {
         PlayerAnalytics storage analytics = playerAnalytics[player];
@@ -617,7 +617,7 @@ contract AIOracle is Ownable, ReentrancyGuard {
     /**
      * @dev Generate behavior patterns
      * @param player Player address
-     * @return Behavior patterns array
+     * @return patterns Behavior patterns array
      */
     function _generateBehaviorPatterns(address player) internal view returns (uint256[] memory) {
         uint256[] memory patterns = new uint256[](5);
@@ -632,7 +632,7 @@ contract AIOracle is Ownable, ReentrancyGuard {
     /**
      * @dev Generate unified behavior patterns
      * @param player Player address
-     * @return Unified behavior patterns array
+     * @return patterns Unified behavior patterns array
      */
     function _generateUnifiedBehaviorPatterns(address player) internal view returns (uint256[] memory) {
         uint256[] memory patterns = new uint256[](7);
@@ -648,7 +648,7 @@ contract AIOracle is Ownable, ReentrancyGuard {
      * @dev Generate analysis hash
      * @param player Player address
      * @param gameId Game ID
-     * @return Analysis hash
+     * @return hash Analysis hash
      */
     function _generateAnalysisHash(address player, uint256 gameId) internal view returns (string memory) {
         bytes32 hash = keccak256(abi.encodePacked(player, gameId, block.timestamp, "nova"));
@@ -659,7 +659,7 @@ contract AIOracle is Ownable, ReentrancyGuard {
      * @dev Generate advanced analysis hash
      * @param player Player address
      * @param gameId Game ID
-     * @return Advanced analysis hash
+     * @return hash Advanced analysis hash
      */
     function _generateAdvancedAnalysisHash(address player, uint256 gameId) internal view returns (string memory) {
         bytes32 hash = keccak256(abi.encodePacked(player, gameId, block.timestamp, "athena"));
@@ -670,7 +670,7 @@ contract AIOracle is Ownable, ReentrancyGuard {
      * @dev Generate unified analysis hash
      * @param player Player address
      * @param gameId Game ID
-     * @return Unified analysis hash
+     * @return hash Unified analysis hash
      */
     function _generateUnifiedAnalysisHash(address player, uint256 gameId) internal view returns (string memory) {
         bytes32 hash = keccak256(abi.encodePacked(player, gameId, block.timestamp, "unified"));
@@ -680,7 +680,7 @@ contract AIOracle is Ownable, ReentrancyGuard {
     /**
      * @dev Convert bytes32 to string
      * @param _bytes32 Bytes32 value
-     * @return String representation
+     * @return str String representation
      */
     function _bytes32ToString(bytes32 _bytes32) internal pure returns (string memory) {
         uint8 i = 0;
@@ -699,7 +699,15 @@ contract AIOracle is Ownable, ReentrancyGuard {
     /**
      * @dev Get AI request details
      * @param requestId Request ID
-     * @return Request details
+     * @return id Request ID
+     * @return player Player address
+     * @return gameId Game ID
+     * @return requestType Request type
+     * @return timestamp Timestamp
+     * @return isProcessed Whether processed
+     * @return fraudScore Fraud score
+     * @return skillLevel Skill level
+     * @return confidence Confidence level
      */
     function getAIRequest(uint256 requestId) 
         external 
@@ -733,7 +741,14 @@ contract AIOracle is Ownable, ReentrancyGuard {
     /**
      * @dev Get player analytics
      * @param player Player address
-     * @return Player analytics
+     * @return totalGames Total games played
+     * @return averageScore Average score
+     * @return winRate Win rate
+     * @return fraudScore Fraud score
+     * @return skillLevel Skill level
+     * @return riskLevel Risk level
+     * @return isFlagged Whether flagged
+     * @return flagReason Flag reason
      */
     function getPlayerAnalytics(address player)
         external
@@ -765,7 +780,13 @@ contract AIOracle is Ownable, ReentrancyGuard {
     /**
      * @dev Get AI service information
      * @param serviceType Service type
-     * @return Service information
+     * @return serviceName Service name
+     * @return serviceAddress Service address
+     * @return isActive Whether active
+     * @return successRate Success rate
+     * @return totalRequests Total requests
+     * @return lastUpdate Last update timestamp
+     * @return fee Service fee
      */
     function getAIService(AIServiceType serviceType)
         external
@@ -794,10 +815,10 @@ contract AIOracle is Ownable, ReentrancyGuard {
     
     /**
      * @dev Get total requests
-     * @return Total number of requests
+     * @return total Total number of requests
      */
     function getTotalRequests() external view returns (uint256) {
-        return _requestIds.current();
+        return _requestIds;
     }
 
     // ============ ADMIN FUNCTIONS ============

@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.19;
+pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/utils/Counters.sol";
-import "@openzeppelin/contracts/security/Pausable.sol";
+
+import "@openzeppelin/contracts/utils/Pausable.sol";
 
 /**
  * @title NFTMarketplace
@@ -14,7 +14,8 @@ import "@openzeppelin/contracts/security/Pausable.sol";
  * @dev Supports AI-powered pricing, auctions, and gaming NFT integration
  */
 contract NFTMarketplace is ReentrancyGuard, Ownable, Pausable {
-    using Counters for Counters.Counter;
+    constructor(address initialOwner) Ownable(initialOwner) {}
+    
 
     // ============ STRUCTS ============
     
@@ -88,8 +89,8 @@ contract NFTMarketplace is ReentrancyGuard, Ownable, Pausable {
 
     // ============ STATE VARIABLES ============
     
-    Counters.Counter private _listingIds;
-    Counters.Counter private _collectionIds;
+    uint256 private _listingIds;
+    uint256 private _collectionIds;
     
     mapping(uint256 => Listing) public listings;
     mapping(address => mapping(uint256 => uint256)) public tokenToListingId;
@@ -157,20 +158,6 @@ contract NFTMarketplace is ReentrancyGuard, Ownable, Pausable {
     modifier onlyAIOracle() {
         require(msg.sender == aiOracle, "Only AI Oracle can call");
         _;
-    }
-
-    // ============ CONSTRUCTOR ============
-    
-    constructor(
-        address _gdiToken,
-        address _aiOracle,
-        address _gamingCore,
-        address _treasury
-    ) {
-        gdiToken = _gdiToken;
-        aiOracle = _aiOracle;
-        gamingCore = _gamingCore;
-        treasury = _treasury;
     }
 
     // ============ LISTING FUNCTIONS ============
@@ -285,8 +272,8 @@ contract NFTMarketplace is ReentrancyGuard, Ownable, Pausable {
         uint256 minBid,
         uint256 duration
     ) internal {
-        _listingIds.increment();
-        uint256 listingId = _listingIds.current();
+        _listingIds++;
+        uint256 listingId = _listingIds;
         
         Listing storage listing = listings[listingId];
         listing.listingId = listingId;
@@ -498,7 +485,7 @@ contract NFTMarketplace is ReentrancyGuard, Ownable, Pausable {
     /**
      * @dev Get AI suggested price for listing
      * @param listingId Listing ID
-     * @return AI suggested price
+     * @return price AI suggested price
      */
     function getAISuggestedPrice(uint256 listingId) external view returns (uint256) {
         return listings[listingId].aiSuggestedPrice;
@@ -560,7 +547,7 @@ contract NFTMarketplace is ReentrancyGuard, Ownable, Pausable {
     /**
      * @dev Get Dutch auction current price
      * @param listingId Listing ID
-     * @return Current price
+     * @return price Current price
      */
     function getDutchAuctionPrice(uint256 listingId) public view returns (uint256) {
         Listing storage listing = listings[listingId];
@@ -580,7 +567,19 @@ contract NFTMarketplace is ReentrancyGuard, Ownable, Pausable {
     /**
      * @dev Get listing details
      * @param listingId Listing ID
-     * @return Listing details
+     * @return nftContract NFT contract address
+     * @return tokenId Token ID
+     * @return seller Seller address
+     * @return price Price
+     * @return aiSuggestedPrice AI suggested price
+     * @return isActive Whether active
+     * @return listingType Listing type
+     * @return minBid Minimum bid
+     * @return currentBid Current bid
+     * @return currentBidder Current bidder
+     * @return auctionEndTime Auction end time
+     * @return createdAt Created timestamp
+     * @return expiresAt Expires timestamp
      */
     function getListing(uint256 listingId)
         external
@@ -622,7 +621,7 @@ contract NFTMarketplace is ReentrancyGuard, Ownable, Pausable {
     /**
      * @dev Get user listings
      * @param user User address
-     * @return Array of listing IDs
+     * @return listings Array of listing IDs
      */
     function getUserListings(address user) external view returns (uint256[] memory) {
         return userListings[user];
@@ -631,7 +630,7 @@ contract NFTMarketplace is ReentrancyGuard, Ownable, Pausable {
     /**
      * @dev Get user bids
      * @param user User address
-     * @return Array of listing IDs where user has bid
+     * @return bids Array of listing IDs where user has bid
      */
     function getUserBids(address user) external view returns (uint256[] memory) {
         return userBids[user];
@@ -640,7 +639,14 @@ contract NFTMarketplace is ReentrancyGuard, Ownable, Pausable {
     /**
      * @dev Get collection information
      * @param nftContract NFT contract address
-     * @return Collection information
+     * @return name Collection name
+     * @return description Collection description
+     * @return totalListings Total listings
+     * @return totalVolume Total volume
+     * @return floorPrice Floor price
+     * @return isVerified Whether verified
+     * @return creator Creator address
+     * @return royaltyPercentage Royalty percentage
      */
     function getCollection(address nftContract)
         external
@@ -672,7 +678,15 @@ contract NFTMarketplace is ReentrancyGuard, Ownable, Pausable {
     /**
      * @dev Get NFT metadata
      * @param tokenId Token ID
-     * @return NFT metadata
+     * @return name NFT name
+     * @return description NFT description
+     * @return imageUri Image URI
+     * @return attributes Attributes
+     * @return rarity Rarity
+     * @return power Power level
+     * @return level Level
+     * @return gameType Game type
+     * @return isGamingNFT Whether gaming NFT
      */
     function getNFTMetadata(uint256 tokenId)
         external

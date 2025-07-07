@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.19;
+pragma solidity ^0.8.20;
 
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/utils/Counters.sol";
+
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 
@@ -14,7 +14,8 @@ import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
  * @dev Supports real-time gaming with AI-powered analytics
  */
 contract GamingCore is ReentrancyGuard, Ownable {
-    using Counters for Counters.Counter;
+    constructor(address initialOwner) Ownable(initialOwner) {}
+    
 
     // ============ STRUCTS ============
     
@@ -82,8 +83,8 @@ contract GamingCore is ReentrancyGuard, Ownable {
 
     // ============ STATE VARIABLES ============
     
-    Counters.Counter private _gameIds;
-    Counters.Counter private _playerIds;
+    uint256 private _gameIds;
+    uint256 private _playerIds;
     
     mapping(uint256 => Game) public games;
     mapping(address => PlayerStats) public playerStats;
@@ -133,18 +134,6 @@ contract GamingCore is ReentrancyGuard, Ownable {
         _;
     }
 
-    // ============ CONSTRUCTOR ============
-    
-    constructor(
-        address _gdiToken,
-        address _aiOracle,
-        address _treasury
-    ) {
-        gdiToken = _gdiToken;
-        aiOracle = _aiOracle;
-        treasury = _treasury;
-    }
-
     // ============ CORE FUNCTIONS ============
     
     /**
@@ -167,8 +156,8 @@ contract GamingCore is ReentrancyGuard, Ownable {
         require(maxPlayers > 1, "Max players must be > 1");
         require(duration >= minGameDuration && duration <= maxGameDuration, "Invalid duration");
         
-        _gameIds.increment();
-        uint256 gameId = _gameIds.current();
+        _gameIds++;
+        uint256 gameId = _gameIds;
         
         Game storage game = games[gameId];
         game.gameId = gameId;
@@ -392,7 +381,7 @@ contract GamingCore is ReentrancyGuard, Ownable {
     /**
      * @dev Get player balance
      * @param player Player address
-     * @return Player's balance
+     * @return balance Player's balance
      */
     function getPlayerBalance(address player) external view returns (uint256) {
         return playerBalances[player];
@@ -401,7 +390,16 @@ contract GamingCore is ReentrancyGuard, Ownable {
     /**
      * @dev Get game information
      * @param gameId Game ID
-     * @return Game details
+     * @return id Game ID
+     * @return gameType Game type
+     * @return minStake Minimum stake
+     * @return maxStake Maximum stake
+     * @return maxPlayers Maximum players
+     * @return currentPlayers Current players
+     * @return state Game state
+     * @return startTime Start time
+     * @return endTime End time
+     * @return totalPot Total pot
      */
     function getGame(uint256 gameId) 
         external 
@@ -439,7 +437,13 @@ contract GamingCore is ReentrancyGuard, Ownable {
      * @dev Get player information in a game
      * @param gameId Game ID
      * @param player Player address
-     * @return Player details
+     * @return playerAddress Player address
+     * @return stake Stake amount
+     * @return score Player score
+     * @return rank Player rank
+     * @return isActive Whether active
+     * @return joinTime Join time
+     * @return lastActionTime Last action time
      */
     function getPlayerInGame(uint256 gameId, address player)
         external
@@ -470,7 +474,13 @@ contract GamingCore is ReentrancyGuard, Ownable {
     /**
      * @dev Get player statistics
      * @param player Player address
-     * @return Player statistics
+     * @return gamesPlayed Games played
+     * @return gamesWon Games won
+     * @return totalEarnings Total earnings
+     * @return totalStaked Total staked
+     * @return winRate Win rate
+     * @return averageScore Average score
+     * @return lastGameTime Last game time
      */
     function getPlayerStats(address player)
         external
@@ -500,7 +510,10 @@ contract GamingCore is ReentrancyGuard, Ownable {
     /**
      * @dev Get AI analytics for a player
      * @param player Player address
-     * @return AI analytics
+     * @return fraudScore Fraud score
+     * @return skillLevel Skill level
+     * @return riskAssessment Risk assessment
+     * @return predictedOutcome Predicted outcome
      */
     function getAIAnalytics(address player)
         external
@@ -554,9 +567,9 @@ contract GamingCore is ReentrancyGuard, Ownable {
     
     /**
      * @dev Get total games created
-     * @return Total number of games
+     * @return total Total number of games
      */
     function getTotalGames() external view returns (uint256) {
-        return _gameIds.current();
+        return _gameIds;
     }
 } 
