@@ -1,7 +1,8 @@
+// [ESM MIGRATION] Project switched to ESM: module=ESNext, moduleResolution=nodenext
 {
   "compilerOptions": {
     "target": "es2020",
-    "module": "commonjs",
+    "module": "NodeNext",
     "lib": ["es2020", "dom"],
     "allowJs": true,
     "outDir": "./dist",
@@ -42,7 +43,7 @@
     "disableSourceOfProjectReferenceRedirect": true,
     "disableSizeLimit": true,
     "maxNodeModuleJsDepth": 0,
-    "moduleResolution": "node",
+    "moduleResolution": "nodenext",
     "allowSyntheticDefaultImports": true,
     "isolatedModules": true,
     "verbatimModuleSyntax": true,

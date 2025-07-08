@@ -1685,3 +1685,8 @@ export class RealTimeGamingEngine extends EventEmitter {
         console.log('✅ GameDin Real-Time Gaming Engine shutdown complete');
     }
 } 
+
+// Helper function for dynamic import of JSON ABIs
+async function loadABI(path: string): Promise<any> {
+    return (await import(path, { assert: { type: "json" } })).default;
+} 

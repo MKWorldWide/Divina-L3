@@ -1,3 +1,4 @@
+// [ESM-ONLY] This file uses ESM import/export syntax. Do not import from CommonJS files.
 import { 
     Connection, 
     PublicKey, 
@@ -7,7 +8,6 @@ import {
     LAMPORTS_PER_SOL
 } from '@solana/web3.js';
 import { 
-    Token, 
     TOKEN_PROGRAM_ID, 
     ASSOCIATED_TOKEN_PROGRAM_ID,
     getAssociatedTokenAddress,
@@ -228,19 +228,12 @@ export class GDITokenUtils {
             // Get mint info
             const mintInfo = await this.connection.getAccountInfo(this.gdiMint);
             if (mintInfo) {
-                const token = new Token(
-                    this.connection,
-                    this.gdiMint,
-                    TOKEN_PROGRAM_ID,
-                    this.wallet
-                );
-                
-                const mintAccount = await token.getMintInfo();
-                console.log('Decimals:', mintAccount.decimals);
-                console.log('Supply:', mintAccount.supply.toString());
-                console.log('Is Initialized:', mintAccount.isInitialized);
-                console.log('Mint Authority:', mintAccount.mintAuthority?.toString() || 'None');
-                console.log('Freeze Authority:', mintAccount.freezeAuthority?.toString() || 'None');
+                // The Token class is no longer imported, so we'll just log basic info
+                console.log('Decimals:', mintInfo.decimals);
+                console.log('Supply:', mintInfo.supply.toString());
+                console.log('Is Initialized:', mintInfo.isInitialized);
+                console.log('Mint Authority:', mintInfo.mintAuthority?.toString() || 'None');
+                console.log('Freeze Authority:', mintInfo.freezeAuthority?.toString() || 'None');
             }
             
             console.log('');

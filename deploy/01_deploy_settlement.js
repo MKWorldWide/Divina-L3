@@ -1,8 +1,8 @@
-const { deployments, getNamedAccounts, ethers } = require("hardhat");
+const { deployments, ethers } = require("hardhat");
 
-module.exports = async ({ getNamedAccounts, deployments }) => {
+module.exports = async ({ deployments }) => {
   const { deploy } = deployments;
-  const { deployer } = await getNamedAccounts();
+  const [deployer] = await ethers.getSigners();
   
   console.log("🚀 Deploying GameDin Settlement Contracts to Base L2...");
   console.log("Deployer:", deployer);

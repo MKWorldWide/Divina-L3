@@ -1,5 +1,4 @@
 require("@nomicfoundation/hardhat-toolbox");
-require("hardhat-deploy");
 require("dotenv").config();
 
 // TypeScript support for tests
@@ -38,6 +37,17 @@ module.exports = {
       verify: {
         etherscan: {
           apiKey: process.env.BASESCAN_API_KEY || "",
+        },
+      },
+    },
+    sepolia: {
+      url: process.env.ETHEREUM_RPC_URL || "https://eth-sepolia.g.alchemy.com/v2/demo",
+      accounts: process.env.DEPLOYER_PRIVATE_KEY ? [process.env.DEPLOYER_PRIVATE_KEY] : [],
+      chainId: 11155111,
+      gasPrice: 1000000000,
+      verify: {
+        etherscan: {
+          apiKey: process.env.ETHERSCAN_API_KEY || "",
         },
       },
     },

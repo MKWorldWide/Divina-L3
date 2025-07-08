@@ -11,6 +11,7 @@ import { AIAnalytics, AIRequestType, PlayerStats, GameState } from '../types/gam
 import { Logger } from '../utils/Logger';
 import { DatabaseService } from '../database/DatabaseService';
 import { BlockchainService } from '../blockchain/BlockchainService';
+import crypto from "crypto";
 
 /**
  * @interface UnifiedAIConfig
@@ -838,7 +839,7 @@ export class UnifiedAIService {
      */
     private generateUnifiedAnalysisHash(playerId: string, gameId: string, timestamp: number): string {
         const data = `${playerId}_${gameId}_${timestamp}_unified`;
-        return require('crypto').createHash('sha256').update(data).digest('hex');
+        return crypto.createHash('sha256').update(data).digest('hex');
     }
     
     /**

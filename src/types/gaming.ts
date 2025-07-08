@@ -1,3 +1,4 @@
+// [ESM-ONLY] This file uses ESM export syntax for all types, enums, and constants. Do not import from CommonJS files.
 /**
  * @file gaming.ts
  * @description TypeScript types and interfaces for GameDin L3 gaming system
@@ -7,8 +8,8 @@
 // ============ GAME TYPES ============
 
 export type GameType = 'battle_royale' | 'tournament' | 'challenge' | 'custom' | 'pvp' | 'cooperative';
-export type GameState = 'waiting' | 'active' | 'finished' | 'cancelled' | 'paused';
-export type GameAction = 'move' | 'attack' | 'defend' | 'collect' | 'use_item' | 'special_ability';
+export type GameStateType = 'waiting' | 'active' | 'finished' | 'cancelled' | 'paused';
+export type GameActionType = 'move' | 'attack' | 'defend' | 'collect' | 'use_item' | 'special_ability';
 
 // ============ PLAYER TYPES ============
 
@@ -28,13 +29,13 @@ export type TransactionStatus = 'pending' | 'confirmed' | 'failed' | 'cancelled'
 // ============ CORE INTERFACES ============
 
 /**
- * @interface GameState
+ * @interface IGameState
  * @description Complete game state information
  */
-export interface GameState {
+export interface IGameState {
     id: string;
     type: GameType;
-    state: GameState;
+    state: GameStateType;
     players: PlayerState[];
     maxPlayers: number;
     minStake: number;
@@ -554,22 +555,6 @@ export interface TournamentPrize {
 }
 
 /**
- * @interface GameAction
- * @description Game action data
- */
-export interface GameAction {
-    type: GameAction;
-    playerId: string;
-    gameId: string;
-    timestamp: number;
-    data: any;
-    targetId?: string;
-    coordinates?: GamePosition;
-    success: boolean;
-    result: GameActionResult;
-}
-
-/**
  * @interface GameActionResult
  * @description Game action result
  */
@@ -648,6 +633,22 @@ export interface Metrics {
     errorRate: number;
 }
 
+/**
+ * @interface IGameAction
+ * @description Game action data
+ */
+export interface IGameAction {
+    type: GameActionType;
+    playerId: string;
+    gameId: string;
+    timestamp: number;
+    data: any;
+    targetId?: string;
+    coordinates?: GamePosition;
+    success: boolean;
+    result: GameActionResult;
+}
+
 // ============ ENUM TYPES ============
 
 export enum GamePhase {
@@ -683,7 +684,6 @@ export enum FraudLevel {
 // ============ UTILITY TYPES ============
 
 export type Optional<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;
-export type Required<T, K extends keyof T> = T & Required<Pick<T, K>>;
 export type DeepPartial<T> = {
     [P in keyof T]?: T[P] extends object ? DeepPartial<T[P]> : T[P];
 };
@@ -691,30 +691,19 @@ export type DeepPartial<T> = {
 // ============ CONSTANTS ============
 
 export const GAME_CONSTANTS = {
-    MAX_PLAYERS_PER_GAME: 100,
-    MIN_STAKE: 0.001,
-    MAX_STAKE: 1000,
-    MAX_GAME_DURATION: 3600000, // 1 hour
-    TICK_RATE: 50, // 50ms
-    AI_ANALYSIS_INTERVAL: 5000, // 5 seconds
-    FRAUD_THRESHOLD: 80,
-    BAN_THRESHOLD: 90,
-    MAX_CHAT_LENGTH: 200,
-    MAX_INVENTORY_SIZE: 50,
-    MAX_ABILITIES: 10
-} as const;
+    MAX_PLAYERS: 100,
+    MIN_STAKE: 1,
+    MAX_STAKE: 10000,
+    DEFAULT_TICK_RATE: 30
+};
 
 export const AI_CONSTANTS = {
-    MIN_CONFIDENCE: 70,
-    MAX_RETRY_ATTEMPTS: 3,
-    TIMEOUT: 10000,
-    BATCH_SIZE: 100,
-    MODEL_VERSION: '1.0.0'
-} as const;
+    MAX_ANALYSIS_SCORE: 100,
+    MIN_CONFIDENCE: 0.5,
+    MAX_CONFIDENCE: 1.0
+};
 
 export const BLOCKCHAIN_CONSTANTS = {
-    GAS_LIMIT: 3000000,
-    GAS_PRICE: 20000000000, // 20 gwei
-    CONFIRMATION_BLOCKS: 12,
-    MAX_RETRIES: 5
-} as const; 
+    DEFAULT_GAS_LIMIT: 8000000,
+    DEFAULT_CHAIN_ID: 31337
+}; 
