@@ -273,7 +273,7 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
           
           if (response.success && response.game) {
             setCurrentGame(response.game);
-            resolve();
+            resolve(undefined);
           } else {
             reject(new Error(response.error || 'Failed to join game'));
           }

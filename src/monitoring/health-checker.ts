@@ -397,7 +397,7 @@ class HealthChecker {
 }
 
 // Start the service if this file is run directly
-if (import.meta.url === path.toFileURL(process.argv[1]).href) {
+if (import.meta.url === new URL(process.argv[1], import.meta.url).href) {
   const healthChecker = new HealthChecker();
   
   healthChecker.start().catch(error => {

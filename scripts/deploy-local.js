@@ -1,7 +1,12 @@
-import { ethers } from "hardhat";
-import fs from "fs";
+// import fs from "fs";
 
 async function main() {
+  // Dynamically import hardhat and destructure ethers for compatibility
+  const hardhat = await import("hardhat");
+  const { ethers } = hardhat.default;
+  // Dynamically import fs for file operations
+  const fs = await import("fs");
+
   console.log("🚀 Deploying GameDin L3 Contracts to Localhost...");
   
   // Get deployer account
@@ -110,7 +115,7 @@ async function main() {
   };
   
   // Save to file
-  fs.writeFileSync('deployed-addresses-local.json', JSON.stringify(addresses, null, 2));
+  fs.default.writeFileSync('deployed-addresses-local.json', JSON.stringify(addresses, null, 2));
   
   console.log("📄 Deployment addresses saved to deployed-addresses-local.json");
   
