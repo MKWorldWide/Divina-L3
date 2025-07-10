@@ -9,16 +9,7 @@
 import { EventEmitter } from 'events';
 import WebSocket from 'ws';
 import { v4 as uuidv4 } from 'uuid';
-import { 
-    GameState, 
-    PlayerState, 
-    GameAction, 
-    AIAnalysis, 
-    GameEvent,
-    GameConfig,
-    PlayerStats,
-    TournamentConfig
-} from '../types/gaming';
+import * as GamingTypes from '../types/gaming.mts';
 import { NovaSanctumAI } from '../ai/NovaSanctumAI';
 import { AthenaMistAI } from '../ai/AthenaMistAI';
 import { UnifiedAIService } from '../ai/UnifiedAIService';
@@ -35,11 +26,11 @@ import { promisify } from 'util';
  */
 export class RealTimeGamingEngine extends EventEmitter {
     private wss: WebSocket.Server;
-    private games: Map<string, GameState> = new Map();
-    private players: Map<string, PlayerState> = new Map();
+    private games: Map<string, GamingTypes.GameState> = new Map();
+    private players: Map<string, GamingTypes.PlayerState> = new Map();
     private connections: Map<string, WebSocket> = new Map();
     private gameQueue: string[] = [];
-    private activeTournaments: Map<string, TournamentConfig> = new Map();
+    private activeTournaments: Map<string, GamingTypes.TournamentConfig> = new Map();
     
     // AI Services
     private novaSanctumAI: NovaSanctumAI;
@@ -52,7 +43,7 @@ export class RealTimeGamingEngine extends EventEmitter {
     private logger: Logger;
     
     // Configuration
-    private config: GameConfig;
+    private config: GamingTypes.GameConfig;
     private isRunning: boolean = false;
     private tickInterval: NodeJS.Timeout | null = null;
     private aiAnalysisInterval: NodeJS.Timeout | null = null;
@@ -85,7 +76,7 @@ export class RealTimeGamingEngine extends EventEmitter {
     private readonly GAME_TIMEOUT = 300000; // 5 minutes
     private readonly MAX_PLAYERS_PER_ROOM = 100;
 
-    constructor(config: GameConfig) {
+    constructor(config: GamingTypes.GameConfig) {
         super();
         this.config = config;
         this.logger = new Logger('RealTimeGamingEngine');
@@ -334,7 +325,7 @@ export class RealTimeGamingEngine extends EventEmitter {
             }
             
             // Create player state
-            const playerState: PlayerState = {
+            const playerState: GamingTypes.PlayerState = {
                 id: playerId,
                 currentGameId: gameId,
                 stake,
@@ -670,8 +661,8 @@ export class RealTimeGamingEngine extends EventEmitter {
      * @method createGame
      * @description Create a new game
      */
-    private async createGame(gameId: string, gameType: string, stake: number): Promise<GameState> {
-        const game: GameState = {
+    private async createGame(gameId: string, gameType: string, stake: number): Promise<GamingTypes.GameState> {
+        const game: GamingTypes.GameState = {
             id: gameId,
             type: gameType,
             state: 'waiting',
@@ -818,9 +809,9 @@ export class RealTimeGamingEngine extends EventEmitter {
         playerId: string, 
         gameId: string, 
         analysisType: string
-    ): Promise<AIAnalysis> {
+    ): Promise<GamingTypes.AIAnalysis> {
         try {
-            let analysis: AIAnalysis;
+            let analysis: GamingTypes.AIAnalysis;
             
             switch (analysisType) {
                 case 'novaSanctum':
@@ -1011,7 +1002,7 @@ export class RealTimeGamingEngine extends EventEmitter {
         );
     }
     
-    private async getPlayerStats(playerId: string): Promise<PlayerStats> {
+    private async getPlayerStats(playerId: string): Promise<GamingTypes.PlayerStats> {
         // Get from database or return default
         return {
             gamesPlayed: 0,
@@ -1062,7 +1053,7 @@ export class RealTimeGamingEngine extends EventEmitter {
      * @method getActiveGames
      * @description Get list of active games
      */
-    getActiveGames(): GameState[] {
+    getActiveGames(): GamingTypes.GameState[] {
         return Array.from(this.games.values()).filter(game => game.state === 'active');
     }
     
@@ -1070,7 +1061,7 @@ export class RealTimeGamingEngine extends EventEmitter {
      * @method getActivePlayers
      * @description Get list of active players
      */
-    getActivePlayers(): PlayerState[] {
+    getActivePlayers(): GamingTypes.PlayerState[] {
         return Array.from(this.players.values()).filter(player => player.isActive);
     }
     
@@ -1230,7 +1221,7 @@ export class RealTimeGamingEngine extends EventEmitter {
         room.lastActivity = Date.now();
         
         // Initialize player state
-        const playerState: PlayerState = {
+        const playerState: GamingTypes.PlayerState = {
             address: playerId,
             position: { x: 0, y: 0 },
             health: 100,
@@ -1281,7 +1272,7 @@ export class RealTimeGamingEngine extends EventEmitter {
         }
         
         // Process game action
-        const gameAction: GameAction = {
+        const gameAction: GamingTypes.GameAction = {
             type: actionType,
             player: playerId,
             gameId: gameId,
@@ -1351,7 +1342,7 @@ export class RealTimeGamingEngine extends EventEmitter {
     /**
      * Process game action and update state
      */
-    private async processGameAction(room: GameRoom, action: GameAction): Promise<void> {
+    private async processGameAction(room: GameRoom, action: GamingTypes.GameAction): Promise<void> {
         const playerState = room.gameState.players.get(action.player);
         if (!playerState) return;
         
@@ -1389,7 +1380,7 @@ export class RealTimeGamingEngine extends EventEmitter {
      * Submit action to blockchain for rewards
      */
     private async submitActionToBlockchain(
-        action: GameAction,
+        action: GamingTypes.GameAction,
         aiValidation: NovaSanctumResponse
     ): Promise<void> {
         try {
@@ -1409,7 +1400,7 @@ export class RealTimeGamingEngine extends EventEmitter {
     /**
      * Calculate XP reward for an action
      */
-    private calculateXPReward(action: GameAction, aiValidation: NovaSanctumResponse): number {
+    private calculateXPReward(action: GamingTypes.GameAction, aiValidation: NovaSanctumResponse): number {
         let baseXP = 10;
         
         switch (action.type) {
@@ -1432,7 +1423,7 @@ export class RealTimeGamingEngine extends EventEmitter {
     /**
      * Calculate token reward for an action
      */
-    private calculateTokenReward(action: GameAction, aiValidation: NovaSanctumResponse): number {
+    private calculateTokenReward(action: GamingTypes.GameAction, aiValidation: NovaSanctumResponse): number {
         let baseTokens = 1;
         
         switch (action.type) {
@@ -1570,7 +1561,7 @@ export class RealTimeGamingEngine extends EventEmitter {
     /**
      * Sanitize game state for transmission
      */
-    private sanitizeGameState(gameState: GameState): any {
+    private sanitizeGameState(gameState: GamingTypes.GameState): any {
         const sanitized: any = {
             gameId: gameState.gameId,
             status: gameState.status,

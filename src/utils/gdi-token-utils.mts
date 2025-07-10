@@ -47,7 +47,7 @@ export class GDITokenUtils {
      */
     private loadSolanaCLIWallet(): Keypair {
         try {
-            const homeDir = process.env.HOME || process.env.USERPROFILE;
+            const homeDir = process.env['HOME'] || process.env['USERPROFILE'];
             const walletPath = path.join(homeDir!, '.config', 'solana', 'id.json');
             
             if (!fs.existsSync(walletPath)) {
@@ -229,11 +229,11 @@ export class GDITokenUtils {
             const mintInfo = await this.connection.getAccountInfo(this.gdiMint);
             if (mintInfo) {
                 // The Token class is no longer imported, so we'll just log basic info
-                console.log('Decimals:', mintInfo.decimals);
-                console.log('Supply:', mintInfo.supply.toString());
-                console.log('Is Initialized:', mintInfo.isInitialized);
-                console.log('Mint Authority:', mintInfo.mintAuthority?.toString() || 'None');
-                console.log('Freeze Authority:', mintInfo.freezeAuthority?.toString() || 'None');
+                console.log('Decimals:', (mintInfo as any).decimals);
+                console.log('Supply:', (mintInfo as any).supply?.toString() || 'Unknown');
+                console.log('Is Initialized:', (mintInfo as any).isInitialized);
+                console.log('Mint Authority:', (mintInfo as any).mintAuthority?.toString() || 'None');
+                console.log('Freeze Authority:', (mintInfo as any).freezeAuthority?.toString() || 'None');
             }
             
             console.log('');
@@ -305,9 +305,9 @@ export class GDITokenUtils {
             
             for (let i = 0; i < signatures.length; i++) {
                 const sig = signatures[i];
-                console.log(`${i + 1}. ${sig.signature}`);
-                console.log(`   Block: ${sig.blockTime}`);
-                console.log(`   Solscan: https://solscan.io/tx/${sig.signature}?cluster=testnet`);
+                console.log(`${i + 1}. ${sig?.signature || 'Unknown'}`);
+                console.log(`   Block: ${sig?.blockTime || 'Unknown'}`);
+                console.log(`   Solscan: https://solscan.io/tx/${sig?.signature || 'unknown'}?cluster=testnet`);
                 console.log('');
             }
         } catch (error) {

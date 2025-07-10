@@ -1,7 +1,12 @@
-const { Connection, PublicKey, Keypair } = require('@solana/web3.js');
-const { Metaplex } = require('@metaplex-foundation/js');
-const fs = require('fs');
-const path = require('path');
+import { Connection, PublicKey, Keypair } from '@solana/web3.js';
+import { Metaplex } from '@metaplex-foundation/js';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+// ESM-compatible __dirname
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Configuration
 const GDI_MINT_ADDRESS = '4VzHLByG3TmvDtTE9wBQomoE1kuYRVqe7hLpCU2d4LwS';
@@ -138,8 +143,8 @@ function keypairIdentity(keypair) {
 }
 
 // Run deployment if called directly
-if (require.main === module) {
+if (import.meta.url === `file://${process.argv[1]}`) {
     deployGDIMetadata();
 }
 
-module.exports = { deployGDIMetadata }; 
+export { deployGDIMetadata }; 

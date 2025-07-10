@@ -7,17 +7,7 @@
 
 import { WebSocket, Server as WebSocketServer } from 'ws';
 import { EventEmitter } from 'events';
-import { 
-    GameState, 
-    PlayerStats, 
-    GameType, 
-    GameResult, 
-    PlayerAction,
-    GameEvent,
-    GameConfig,
-    GameSession,
-    PlayerConnection
-} from '../types/gaming';
+import * as GamingTypes from '../types/gaming.mts';
 import { UnifiedAIService } from '../ai/UnifiedAIService';
 import { BlockchainService } from '../blockchain/BlockchainService';
 import { DatabaseService } from '../database/DatabaseService';
@@ -38,8 +28,8 @@ export interface GamingEngineConfig {
     databaseConfig: any;
     blockchainConfig: any;
     aiConfig: any;
-    gameTypes: GameType[];
-    defaultGameConfig: GameConfig;
+    gameTypes: GamingTypes.GameType[];
+    defaultGameConfig: GamingTypes.GameConfig;
 }
 
 /**
@@ -48,16 +38,16 @@ export interface GamingEngineConfig {
  */
 export interface GameInstance {
     gameId: string;
-    gameType: GameType;
-    config: GameConfig;
-    state: GameState;
-    players: Map<string, PlayerConnection>;
+    gameType: GamingTypes.GameType;
+    config: GamingTypes.GameConfig;
+    state: GamingTypes.GameState;
+    players: Map<string, GamingTypes.PlayerConnection>;
     startTime: number;
     endTime?: number;
-    result?: GameResult;
+    result?: GamingTypes.GameResult;
     aiAnalysis?: any;
     blockchainTx?: string;
-    events: GameEvent[];
+    events: GamingTypes.GameEvent[];
 }
 
 /**
@@ -69,7 +59,7 @@ export interface PlayerSession {
     connection: WebSocket;
     currentGame?: string;
     lastActivity: number;
-    stats: PlayerStats;
+    stats: GamingTypes.PlayerStats;
     isAuthenticated: boolean;
 }
 
@@ -411,7 +401,7 @@ export class GamingEngine extends EventEmitter {
             }
             
             // Process player action
-            const action: PlayerAction = {
+            const action: GamingTypes.PlayerAction = {
                 playerId,
                 actionType: message.actionType,
                 data: message.data,
@@ -573,7 +563,7 @@ export class GamingEngine extends EventEmitter {
      * @param config Game configuration
      * @returns Available game or null
      */
-    private findAvailableGame(gameType: GameType, config: GameConfig): GameInstance | null {
+    private findAvailableGame(gameType: GamingTypes.GameType, config: GamingTypes.GameConfig): GameInstance | null {
         for (const game of this.activeGames.values()) {
             if (game.gameType === gameType && 
                 game.players.size < this.config.maxPlayersPerGame &&
@@ -591,7 +581,7 @@ export class GamingEngine extends EventEmitter {
      * @param config Game configuration
      * @returns New game instance
      */
-    private async createNewGame(gameType: GameType, config: GameConfig): Promise<GameInstance> {
+    private async createNewGame(gameType: GamingTypes.GameType, config: GamingTypes.GameConfig): Promise<GameInstance> {
         this.gameCounter++;
         const gameId = `game_${this.gameCounter}_${Date.now()}`;
         
@@ -699,7 +689,7 @@ export class GamingEngine extends EventEmitter {
      * @param gameId Game ID
      * @param result Game result
      */
-    private async endGame(gameId: string, result: GameResult): Promise<void> {
+    private async endGame(gameId: string, result: GamingTypes.GameResult): Promise<void> {
         try {
             const game = this.activeGames.get(gameId);
             if (!game) return;
@@ -757,7 +747,7 @@ export class GamingEngine extends EventEmitter {
      * @param action Player action
      * @returns Processing result
      */
-    private async processPlayerAction(game: GameInstance, action: PlayerAction): Promise<any> {
+    private async processPlayerAction(game: GameInstance, action: GamingTypes.PlayerAction): Promise<any> {
         try {
             // Validate action
             const validation = this.validatePlayerAction(game, action);
@@ -800,7 +790,7 @@ export class GamingEngine extends EventEmitter {
      * @description Get default player stats
      * @returns Default player stats
      */
-    private getDefaultPlayerStats(): PlayerStats {
+    private getDefaultPlayerStats(): GamingTypes.PlayerStats {
         return {
             playerId: '',
             gamesPlayed: 0,
@@ -831,7 +821,7 @@ export class GamingEngine extends EventEmitter {
      * @param config Game configuration
      * @returns Initial game state
      */
-    private createInitialGameState(gameType: GameType, config: GameConfig): GameState {
+    private createInitialGameState(gameType: GamingTypes.GameType, config: GamingTypes.GameConfig): GamingTypes.GameState {
         return {
             gameId: '',
             status: 'waiting',
@@ -864,7 +854,7 @@ export class GamingEngine extends EventEmitter {
      * @param action Player action
      * @returns Validation result
      */
-    private validatePlayerAction(game: GameInstance, action: PlayerAction): { valid: boolean; error?: string } {
+    private validatePlayerAction(game: GameInstance, action: GamingTypes.PlayerAction): { valid: boolean; error?: string } {
         // Check if player is in game
         if (!game.players.has(action.playerId)) {
             return { valid: false, error: 'Player not in game' };

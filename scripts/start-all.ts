@@ -1,7 +1,13 @@
+// Quantum-detailed ESM migration for start-all
+import { fileURLToPath } from 'url';
+import path from 'path';
 import { spawn, ChildProcess } from "child_process";
 import { promisify } from "util";
 import { existsSync } from "fs";
 import { join } from "path";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 interface ServiceConfig {
   name: string;
@@ -132,6 +138,6 @@ async function main(): Promise<void> {
   }
 }
 
-if (require.main === module) {
+if (import.meta.url === path.toFileURL(process.argv[1]).href) {
   main().catch(console.error);
 } 

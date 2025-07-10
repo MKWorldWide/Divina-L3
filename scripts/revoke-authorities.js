@@ -1,7 +1,13 @@
-const { Connection, PublicKey, Keypair, Transaction, SystemProgram } = require('@solana/web3.js');
-const { Token, TOKEN_PROGRAM_ID } = require('@solana/spl-token');
-const fs = require('fs');
-const path = require('path');
+// Quantum-detailed ESM migration for revoke-authorities
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { Connection, PublicKey, Keypair, Transaction, SystemProgram } from '@solana/web3.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+import { TOKEN_PROGRAM_ID } from '@solana/spl-token';
 
 // Configuration
 const GDI_MINT_ADDRESS = '4VzHLByG3TmvDtTE9wBQomoE1kuYRVqe7hLpCU2d4LwS';
@@ -206,7 +212,7 @@ async function checkAuthorityStatus() {
 }
 
 // Run if called directly
-if (require.main === module) {
+if (import.meta.url === `file://${process.argv[1]}`) {
     const args = process.argv.slice(2);
     
     if (args.includes('--check')) {
@@ -216,4 +222,4 @@ if (require.main === module) {
     }
 }
 
-module.exports = { revokeAuthorities, checkAuthorityStatus }; 
+export { revokeAuthorities, checkAuthorityStatus }; 

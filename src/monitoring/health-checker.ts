@@ -20,6 +20,11 @@ import { config } from "dotenv";
 import winston from "winston";
 import axios from "axios";
 import { WebSocket } from "ws";
+import { fileURLToPath } from 'url';
+import path from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Load environment variables
 config();
@@ -81,7 +86,7 @@ class HealthChecker {
   constructor() {
     this.services = this.loadServiceConfigs();
     this.app = express();
-    this.port = parseInt(process.env.HEALTH_PORT || "3003");
+    this.port = parseInt(process.env['HEALTH_PORT'] || "3003");
     this.startTime = Date.now();
     this.healthCache = new Map();
     this.cacheTimeout = 30000; // 30 seconds
@@ -94,33 +99,33 @@ class HealthChecker {
     return [
       {
         name: "Hardhat Node",
-        url: process.env.HARDHAT_RPC || "http://localhost:8545",
+        url: process.env['HARDHAT_RPC'] || "http://localhost:8545",
         type: "blockchain",
         timeout: 5000
       },
       {
         name: "Gaming Engine",
-        url: process.env.GAMING_ENGINE_URL || "ws://localhost:8080",
+        url: process.env['GAMING_ENGINE_URL'] || "ws://localhost:8080",
         type: "websocket",
         timeout: 5000
       },
       {
         name: "AI Service (NovaSanctum)",
-        url: process.env.AI_SERVICE_URL || "http://localhost:3001",
+        url: process.env['AI_SERVICE_URL'] || "http://localhost:3001",
         type: "http",
         timeout: 5000,
         expectedResponse: { status: "healthy" }
       },
       {
         name: "Bridge Relayer",
-        url: process.env.BRIDGE_RELAYER_URL || "http://localhost:3002",
+        url: process.env['BRIDGE_RELAYER_URL'] || "http://localhost:3002",
         type: "http",
         timeout: 5000,
         expectedResponse: { status: "healthy" }
       },
       {
         name: "Frontend",
-        url: process.env.FRONTEND_URL || "http://localhost:3000",
+        url: process.env['FRONTEND_URL'] || "http://localhost:3000",
         type: "http",
         timeout: 5000
       }
@@ -227,12 +232,12 @@ class HealthChecker {
     const responseTime = Date.now() - startTime;
     
     const healthStatus: HealthStatus = {
-      service: service.name,
-      status,
+      service: this.services[index]?.name || 'unknown',
+      status: isHealthy ? "healthy" : "unhealthy",
       timestamp: new Date().toISOString(),
       responseTime,
-      details,
-      error
+      details: response.data || {},
+      error: error?.message || undefined
     };
 
     // Cache the result
@@ -306,7 +311,7 @@ class HealthChecker {
         services.push(result.value);
       } else {
         services.push({
-          service: this.services[index].name,
+          service: this.services[index]?.name || 'unknown',
           status: "unhealthy",
           timestamp: new Date().toISOString(),
           responseTime: 0,
@@ -392,7 +397,7 @@ class HealthChecker {
 }
 
 // Start the service if this file is run directly
-if (require.main === module) {
+if (import.meta.url === path.toFileURL(process.argv[1]).href) {
   const healthChecker = new HealthChecker();
   
   healthChecker.start().catch(error => {

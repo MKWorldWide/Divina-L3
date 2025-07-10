@@ -1,6 +1,7 @@
 {
   "name": "gamedin-l3-gaming-blockchain",
   "version": "1.0.0",
+  "type": "module",
   "description": "Complete GameDin Layer 3 Gaming Blockchain with NovaSanctum AI Integration",
   "main": "src/index.ts",
   "scripts": {
@@ -43,7 +44,8 @@
     "l3:quick": "./GameDin_L3_Quick_Start.sh",
     "auto-testnet": "node scripts/auto-testnet.js",
     "start:all": "ts-node scripts/start-all.ts",
-    "start:all:js": "node scripts/start-all.js"
+    "start:all:js": "node scripts/start-all.js",
+    "type-check": "tsc --noEmit"
   },
   "keywords": [
     "blockchain",

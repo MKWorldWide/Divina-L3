@@ -16,6 +16,7 @@ import {
   CheckCircle,
   Info,
 } from '@mui/icons-material';
+import * as GamingTypes from '../../../../../src/types/gaming.mts';
 
 interface AIInsight {
   id: string;

@@ -1,5 +1,10 @@
-const fs = require('fs');
-const path = require('path');
+// Quantum-detailed ESM migration for verify-setup
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 /**
  * Verify GDI Token Deployment Setup
@@ -207,8 +212,8 @@ async function verifySetup() {
 }
 
 // Run if called directly
-if (require.main === module) {
+if (import.meta.url === `file://${process.argv[1]}`) {
     verifySetup();
 }
 
-module.exports = { verifySetup }; 
+export { verifySetup }; 

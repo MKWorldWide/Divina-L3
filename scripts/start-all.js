@@ -1,8 +1,14 @@
-const { spawn } = require("child_process");
+// Quantum-detailed ESM migration for start-all.js
+import { spawn } from 'child_process';
+import { fileURLToPath } from 'url';
+import path from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 function startService(cmd, args, name) {
-  const proc = spawn(cmd, args, { stdio: "inherit", shell: true });
-  proc.on("close", code => {
+  const proc = spawn(cmd, args, { stdio: 'inherit', shell: true });
+  proc.on('close', code => {
     if (code !== 0) {
       console.error(`${name} exited with code ${code}`);
     }

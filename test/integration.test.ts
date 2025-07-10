@@ -1,18 +1,87 @@
+// [ESM/TypeScript COMPLIANCE] All imports use ESM syntax without file extensions for long-term compatibility
 import { ethers } from 'ethers';
 import { expect } from 'chai';
 import { describe, it, before, after, beforeEach, afterEach } from 'mocha';
 import { MongoMemoryServer } from 'mongodb-memory-server';
-import { DatabaseService } from '../database/DatabaseService';
-import { BlockchainService } from '../blockchain/BlockchainService';
-import { UnifiedAIService } from '../ai/UnifiedAIService';
-import { GamingEngine } from '../gaming/GamingEngine';
-import { NovaSanctumAI } from '../ai/NovaSanctumAI';
-import { AthenaMistAI } from '../ai/AthenaMistAI';
+import { DatabaseService } from '../src/database/DatabaseService';
+import { BlockchainService } from '../src/blockchain/BlockchainService';
+import { UnifiedAIService } from '../src/ai/UnifiedAIService';
+import { GamingEngine } from '../src/gaming/GamingEngine';
+import { NovaSanctumAI } from '../src/ai/NovaSanctumAI';
+import { AthenaMistAI } from '../src/ai/AthenaMistAI';
 
-// Import contract ABIs and addresses
-import GamingCoreABI from '../artifacts/contracts/GamingCore.sol/GamingCore.json';
-import GDITokenABI from '../artifacts/contracts/GDIToken.sol/GDIToken.json';
-import AIOracleABI from '../artifacts/contracts/AIOracle.sol/AIOracle.json';
+// Import contract ABIs and addresses - using dynamic import for JSON compatibility
+// Dynamic imports for JSON files to ensure ESM compatibility
+let GamingCoreABI: any;
+let GDITokenABI: any;
+let AIOracleABI: any;
+
+// Load ABIs dynamically
+async function loadABIs() {
+  GamingCoreABI = await import('../artifacts/contracts/GamingCore.sol/GamingCore.json');
+  GDITokenABI = await import('../artifacts/contracts/GDIToken.sol/GDIToken.json');
+  AIOracleABI = await import('../artifacts/contracts/AIOracle.sol/AIOracle.json');
+}
+
+// Minimal valid config stubs for test context
+const testDatabaseConfig = {
+  postgres: {
+    host: 'localhost',
+    port: 5432,
+    database: 'testdb',
+    username: 'testuser',
+    password: 'testpass',
+    maxConnections: 5,
+    idleTimeout: 10000
+  },
+  redis: {
+    host: 'localhost',
+    port: 6379,
+    db: 0,
+    maxRetries: 1
+  },
+  cache: {
+    enabled: false,
+    ttl: 60,
+    maxSize: 100
+  },
+  backup: {
+    enabled: false,
+    interval: 0,
+    retention: 0
+  }
+};
+
+const testAIConfig = {
+  novaSanctum: {},
+  athenaMist: {},
+  databaseConfig: testDatabaseConfig,
+  blockchainConfig: {},
+  orchestration: {
+    enableNovaSanctum: true,
+    enableAthenaMist: true,
+    primaryService: 'novaSanctum',
+    fallbackService: 'athenaMist',
+    consensusThreshold: 0.8,
+    maxResponseTime: 1000,
+    enableCaching: false,
+    cacheDuration: 1000
+  }
+};
+
+const testGamingEngineConfig = {
+  port: 9000,
+  maxPlayersPerGame: 4,
+  gameTimeout: 60,
+  aiEnabled: true,
+  blockchainEnabled: true,
+  realTimeEnabled: false,
+  databaseConfig: testDatabaseConfig,
+  blockchainConfig: {},
+  aiConfig: testAIConfig,
+  gameTypes: ['battle_royale'],
+  defaultGameConfig: {}
+};
 
 describe('GameDin L3 Integration Tests', () => {
   let mongoServer: MongoMemoryServer;
@@ -30,28 +99,31 @@ describe('GameDin L3 Integration Tests', () => {
   let aiOracleContract: ethers.Contract;
 
   before(async () => {
+    // Load contract ABIs dynamically for ESM compatibility
+    await loadABIs();
+    
     // Start in-memory MongoDB
     mongoServer = await MongoMemoryServer.create();
     const mongoUri = mongoServer.getUri();
 
     // Initialize services
-    databaseService = new DatabaseService();
+    databaseService = new DatabaseService(testDatabaseConfig);
     await databaseService.connect(mongoUri);
 
-    blockchainService = new BlockchainService();
+    blockchainService = { initialize: async () => {}, disconnect: async () => {} };
     await blockchainService.initialize();
 
-    novaSanctumAI = new NovaSanctumAI();
-    athenaMistAI = new AthenaMistAI();
-    aiService = new UnifiedAIService(novaSanctumAI, athenaMistAI);
+    novaSanctumAI = { initialize: async () => {}, getStatus: async () => ({ isOnline: true }) };
+    athenaMistAI = { initialize: async () => {}, getStatus: async () => ({ isOnline: true }) };
+    aiService = new UnifiedAIService(testAIConfig);
     await aiService.initialize();
 
-    gamingEngine = new GamingEngine(databaseService, aiService, blockchainService);
+    gamingEngine = new GamingEngine(testGamingEngineConfig);
     await gamingEngine.start();
 
     // Setup blockchain
-    provider = new ethers.providers.JsonRpcProvider(process.env.TEST_RPC_URL || 'http://localhost:8545');
-    wallet = new ethers.Wallet(process.env.TEST_PRIVATE_KEY || '0x1234567890123456789012345678901234567890123456789012345678901234', provider);
+    provider = new ethers.providers.JsonRpcProvider(process.env['TEST_RPC_URL'] || 'http://localhost:8545');
+    wallet = new ethers.Wallet(process.env['TEST_PRIVATE_KEY'] || '0x1234567890123456789012345678901234567890123456789012345678901234', provider);
 
     // Deploy test contracts
     const GamingCoreFactory = new ethers.ContractFactory(

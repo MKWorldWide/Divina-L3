@@ -1,8 +1,14 @@
-const { deployGDIMetadata } = require('./deploy-metadata');
-const { createRaydiumPool, addInitialLiquidity } = require('./create-raydium-pool');
-const { revokeAuthorities, checkAuthorityStatus } = require('./revoke-authorities');
-const fs = require('fs');
-const path = require('path');
+// Quantum-detailed ESM migration for deployment orchestrator
+import { deployGDIMetadata } from './deploy-metadata.js';
+import { createRaydiumPool, addInitialLiquidity } from './create-raydium-pool.js';
+import { revokeAuthorities, checkAuthorityStatus } from './revoke-authorities.js';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+// ESM-compatible __dirname
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 /**
  * Complete GDI Token Deployment Orchestrator
@@ -310,7 +316,7 @@ function showDeploymentStatus() {
 }
 
 // Run if called directly
-if (require.main === module) {
+if (process.argv[1].endsWith('deploy-gdi-complete.js')) {
     const args = process.argv.slice(2);
     
     if (args.includes('--status')) {
@@ -320,4 +326,4 @@ if (require.main === module) {
     }
 }
 
-module.exports = { deployGDIComplete, showDeploymentStatus }; 
+export { deployGDIComplete, showDeploymentStatus }; 

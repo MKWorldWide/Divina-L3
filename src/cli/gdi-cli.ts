@@ -1,4 +1,10 @@
 #!/usr/bin/env node
+// Quantum-detailed ESM migration for gdi-cli
+import { fileURLToPath } from 'url';
+import path from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 import { GDITokenUtils, createGDITokenUtils } from '../utils/gdi-token-utils';
 import { PublicKey } from '@solana/web3.js';
@@ -178,7 +184,7 @@ class GDICLI {
 }
 
 // Run CLI if called directly
-if (require.main === module) {
+if (import.meta.url === path.toFileURL(process.argv[1]).href) {
     const cli = new GDICLI();
     cli.run().catch(console.error);
 }

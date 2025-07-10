@@ -1,7 +1,14 @@
-const { Connection, PublicKey, Keypair, Transaction } = require('@solana/web3.js');
-const { Liquidity, LiquidityPoolKeys, LiquidityPoolStatus } = require('@raydium-io/raydium-sdk');
-const fs = require('fs');
-const path = require('path');
+// Quantum-detailed ESM migration for create-raydium-pool
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+import { Connection, PublicKey, Keypair, Transaction } from '@solana/web3.js';
+import pkg from '@raydium-io/raydium-sdk';
+const { Liquidity, LiquidityPoolKeys, LiquidityPoolStatus } = pkg;
 
 // Configuration
 const GDI_MINT_ADDRESS = '4VzHLByG3TmvDtTE9wBQomoE1kuYRVqe7hLpCU2d4LwS';
@@ -218,8 +225,14 @@ async function addInitialLiquidity(poolId, gdiAmount, usdcAmount) {
 }
 
 // Run if called directly
-if (require.main === module) {
-    createRaydiumPool();
+if (import.meta.url === `file://${process.argv[1]}`) {
+    const args = process.argv.slice(2);
+    
+    if (args.includes('--add-liquidity')) {
+        addInitialLiquidity();
+    } else {
+        createRaydiumPool();
+    }
 }
 
-module.exports = { createRaydiumPool, addInitialLiquidity }; 
+export { createRaydiumPool, addInitialLiquidity }; 

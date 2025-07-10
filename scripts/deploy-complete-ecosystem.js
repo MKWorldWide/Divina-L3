@@ -1,14 +1,17 @@
-#!/usr/bin/env node
+// Quantum-detailed ESM migration for deploy-complete-ecosystem
+import { execSync } from 'child_process';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 /**
  * GameDin L3 Complete Ecosystem Deployment Script
  * Deploys the entire GameDin L3 gaming blockchain system
  * @author GameDin Team
  */
-
-const { execSync } = require('child_process');
-const fs = require('fs');
-const path = require('path');
 
 // Colors for console output
 const colors = {
@@ -447,11 +450,11 @@ async function main() {
 }
 
 // Run deployment
-if (require.main === module) {
+if (import.meta.url === `file://${process.argv[1]}`) {
     main().catch((error) => {
         logError(`Unhandled error: ${error.message}`);
         process.exit(1);
     });
 }
 
-module.exports = { main }; 
+export { main }; 

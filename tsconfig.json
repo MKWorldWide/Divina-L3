@@ -71,7 +71,7 @@
     "transpileOnly": true,
     "files": true,
     "compilerOptions": {
-      "module": "commonjs"
+      "module": "NodeNext"
     }
   },
   "files": [
