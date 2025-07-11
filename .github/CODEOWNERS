@@ -1,0 +1,59 @@
+# These owners will be the default owners for everything in
+# the repo. Unless a later match takes precedence,
+# @gamedin will be requested for review when someone opens a pull request.
+* @gamedin
+
+# Smart Contracts
+/contracts/ @gamedin
+/deploy/ @gamedin
+/hardhat.config.cjs @gamedin
+
+# Frontend Application
+/gdi-dapp/ @gamedin
+/gdi-dapp/src/ @gamedin
+/gdi-dapp/public/ @gamedin
+
+# Backend Services
+/src/ @gamedin
+/src/ai/ @gamedin
+/src/api/ @gamedin
+/src/blockchain/ @gamedin
+/src/bridge/ @gamedin
+/src/gaming/ @gamedin
+/src/monitoring/ @gamedin
+
+# Infrastructure
+/terraform/ @gamedin
+/docker-compose.yml @gamedin
+/Dockerfile @gamedin
+
+# Documentation
+/docs/ @gamedin
+/README.md @gamedin
+/CONTRIBUTING.md @gamedin
+/SECURITY.md @gamedin
+/CODE_OF_CONDUCT.md @gamedin
+/CHANGELOG.md @gamedin
+/QUICK_START.md @gamedin
+
+# Configuration Files
+/package.json @gamedin
+/tsconfig.json @gamedin
+/.github/ @gamedin
+/.gitignore @gamedin
+
+# Scripts
+/scripts/ @gamedin
+
+# Tests
+/test/ @gamedin
+
+# Monitoring
+/monitoring/ @gamedin
+
+# Assets
+/assets/ @gamedin
+
+# Environment and Deployment
+/env.example @gamedin
+/deployed-addresses*.json @gamedin 

@@ -9,6 +9,11 @@
     "build:watch": "tsc --watch",
     "clean": "rm -rf dist cache artifacts",
     "test": "npx hardhat test",
+    "test:coverage": "npx hardhat coverage",
+    "test:integration": "npm run test -- --grep 'Integration'",
+    "lint": "eslint src/**/*.ts",
+    "lint:fix": "eslint src/**/*.ts --fix",
+    "format": "prettier --write src/**/*.ts",
     "deploy:local": "npx hardhat run scripts/deploy-local.js --network localhost",
     "deploy:testnet": "npx hardhat run scripts/deploy-testnet.js --network testnet",
     "deploy:sepolia": "npx hardhat run scripts/deploy-sepolia.js --network sepolia",
@@ -45,7 +50,13 @@
     "auto-testnet": "node scripts/auto-testnet.js",
     "start:all": "ts-node scripts/start-all.ts",
     "start:all:js": "node scripts/start-all.js",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "setup": "npm install && cp env.example .env",
+    "quickstart": "./GameDin_AthenaMist_Complete_Launch.sh development",
+    "docker:build": "docker build -t gamedin-l3 .",
+    "docker:run": "docker run -p 3000:3000 -p 8545:8545 gamedin-l3",
+    "docs:build": "typedoc src/**/*.ts --out docs/api",
+    "docs:serve": "npx serve docs/api"
   },
   "keywords": [
     "blockchain",
@@ -53,15 +64,26 @@
     "layer3",
     "ai",
     "novasanctum",
+    "athenamist",
     "ethereum",
     "base",
     "defi",
     "gdi",
     "gamedin",
     "websocket",
-    "realtime"
+    "realtime",
+    "nft",
+    "gaming-infrastructure",
+    "smart-contracts",
+    "typescript",
+    "react",
+    "hardhat"
   ],
-  "author": "GameDin Team",
+  "author": {
+    "name": "GameDin Team",
+    "email": "team@gamedin.com",
+    "url": "https://gamedin.io"
+  },
   "license": "MIT",
   "dependencies": {
     "@chainlink/contracts": "^0.8.0",

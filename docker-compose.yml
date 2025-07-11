@@ -1,0 +1,226 @@
+version: '3.8'
+
+services:
+  # GameDin L3 Blockchain Node
+  gamedin-node:
+    build:
+      context: .
+      target: development
+    container_name: gamedin-l3-node
+    ports:
+      - "8545:8545"
+    environment:
+      - NODE_ENV=development
+      - CHAIN_ID=31337
+    volumes:
+      - ./contracts:/app/contracts
+      - ./scripts:/app/scripts
+      - ./logs:/app/logs
+    command: npm run start:node
+    networks:
+      - gamedin-network
+
+  # GameDin Frontend
+  gamedin-frontend:
+    build:
+      context: ./gdi-dapp
+      dockerfile: Dockerfile
+    container_name: gamedin-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - REACT_APP_RPC_URL=http://gamedin-node:8545
+      - REACT_APP_WS_URL=ws://gamedin-gaming:9546
+      - REACT_APP_API_URL=http://gamedin-api:4000
+    depends_on:
+      - gamedin-node
+      - gamedin-api
+    volumes:
+      - ./gdi-dapp/src:/app/src
+      - ./gdi-dapp/public:/app/public
+    networks:
+      - gamedin-network
+
+  # GameDin API Gateway
+  gamedin-api:
+    build:
+      context: .
+      target: development
+    container_name: gamedin-api
+    ports:
+      - "4000:4000"
+    environment:
+      - NODE_ENV=development
+      - RPC_URL=http://gamedin-node:8545
+      - DATABASE_URL=postgresql://gamedin:password@postgres:5432/gamedin
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      - postgres
+      - redis
+      - gamedin-node
+    volumes:
+      - ./src:/app/src
+      - ./logs:/app/logs
+    command: npm run start:api
+    networks:
+      - gamedin-network
+
+  # Gaming Engine
+  gamedin-gaming:
+    build:
+      context: .
+      target: development
+    container_name: gamedin-gaming
+    ports:
+      - "9546:9546"
+    environment:
+      - NODE_ENV=development
+      - RPC_URL=http://gamedin-node:8545
+      - DATABASE_URL=postgresql://gamedin:password@postgres:5432/gamedin
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      - postgres
+      - redis
+      - gamedin-node
+    volumes:
+      - ./src:/app/src
+      - ./logs:/app/logs
+    command: npm run start:gaming
+    networks:
+      - gamedin-network
+
+  # AI Services
+  gamedin-ai:
+    build:
+      context: .
+      target: development
+    container_name: gamedin-ai
+    environment:
+      - NODE_ENV=development
+      - ATHENAMIST_API_KEY=${ATHENAMIST_API_KEY}
+      - NOVASANCTUM_API_KEY=${NOVASANCTUM_API_KEY}
+      - ENABLE_UNIFIED_AI=true
+      - DATABASE_URL=postgresql://gamedin:password@postgres:5432/gamedin
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      - postgres
+      - redis
+    volumes:
+      - ./src:/app/src
+      - ./logs:/app/logs
+    command: npm run start:ai:unified
+    networks:
+      - gamedin-network
+
+  # Bridge Relayer
+  gamedin-bridge:
+    build:
+      context: .
+      target: development
+    container_name: gamedin-bridge
+    environment:
+      - NODE_ENV=development
+      - RPC_URL=http://gamedin-node:8545
+      - DATABASE_URL=postgresql://gamedin:password@postgres:5432/gamedin
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      - postgres
+      - redis
+      - gamedin-node
+    volumes:
+      - ./src:/app/src
+      - ./logs:/app/logs
+    command: npm run start:bridge
+    networks:
+      - gamedin-network
+
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: gamedin-postgres
+    environment:
+      - POSTGRES_DB=gamedin
+      - POSTGRES_USER=gamedin
+      - POSTGRES_PASSWORD=password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - gamedin-network
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: gamedin-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - gamedin-network
+
+  # Grafana Monitoring
+  grafana:
+    image: grafana/grafana:latest
+    container_name: gamedin-grafana
+    ports:
+      - "3001:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana-dashboard.json:/etc/grafana/provisioning/dashboards/dashboard.json
+    depends_on:
+      - prometheus
+    networks:
+      - gamedin-network
+
+  # Prometheus Metrics
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: gamedin-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=200h'
+      - '--web.enable-lifecycle'
+    networks:
+      - gamedin-network
+
+  # Health Checker
+  health-checker:
+    build:
+      context: .
+      target: development
+    container_name: gamedin-health
+    environment:
+      - NODE_ENV=development
+    depends_on:
+      - gamedin-node
+      - gamedin-api
+      - gamedin-gaming
+      - gamedin-ai
+    volumes:
+      - ./src:/app/src
+    command: npm run health:check
+    networks:
+      - gamedin-network
+
+volumes:
+  postgres_data:
+  redis_data:
+  grafana_data:
+  prometheus_data:
+
+networks:
+  gamedin-network:
+    driver: bridge 
