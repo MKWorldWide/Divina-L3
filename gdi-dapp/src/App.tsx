@@ -7,7 +7,7 @@ import { Web3Provider } from '@ethersproject/providers';
 import { WalletProvider } from './contexts/WalletContext';
 import { GameProvider } from './contexts/GameContext';
 import { AIProvider } from './contexts/AIContext';
-import { Dashboard } from './pages/Dashboard';
+import Dashboard from './pages/Dashboard';
 import { MetaMaskTestPage } from './pages/MetaMaskTestPage';
 
 const theme = createTheme({
@@ -22,7 +22,7 @@ const theme = createTheme({
   },
 });
 
-// Web3 Provider wrapper
+// Web3 Provider wrapper for web3-react v8+
 function getLibrary(provider: any): Web3Provider {
   const library = new Web3Provider(provider);
   library.pollingInterval = 12000;
@@ -31,39 +31,37 @@ function getLibrary(provider: any): Web3Provider {
 
 function App() {
   return (
-    <Web3ReactProvider getLibrary={getLibrary}>
-      <ThemeProvider theme={theme}>
-        <CssBaseline />
-        <WalletProvider>
-          <GameProvider>
-            <AIProvider>
-              <Router>
-                <AppBar position="static">
-                  <Toolbar>
-                    <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-                      GameDin L3
-                    </Typography>
-                    <Box sx={{ display: 'flex', gap: 2 }}>
-                      <Button color="inherit" component={Link} to="/">
-                        Dashboard
-                      </Button>
-                      <Button color="inherit" component={Link} to="/metamask-test">
-                        MetaMask Test
-                      </Button>
-                    </Box>
-                  </Toolbar>
-                </AppBar>
-                
-                <Routes>
-                  <Route path="/" element={<Dashboard />} />
-                  <Route path="/metamask-test" element={<MetaMaskTestPage />} />
-                </Routes>
-              </Router>
-            </AIProvider>
-          </GameProvider>
-        </WalletProvider>
-      </ThemeProvider>
-    </Web3ReactProvider>
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
+      <WalletProvider>
+        <GameProvider>
+          <AIProvider>
+            <Router>
+              <AppBar position="static">
+                <Toolbar>
+                  <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+                    GameDin L3
+                  </Typography>
+                  <Box sx={{ display: 'flex', gap: 2 }}>
+                    <Button color="inherit" component={Link} to="/">
+                      Dashboard
+                    </Button>
+                    <Button color="inherit" component={Link} to="/metamask-test">
+                      MetaMask Test
+                    </Button>
+                  </Box>
+                </Toolbar>
+              </AppBar>
+              
+              <Routes>
+                <Route path="/" element={<Dashboard />} />
+                <Route path="/metamask-test" element={<MetaMaskTestPage />} />
+              </Routes>
+            </Router>
+          </AIProvider>
+        </GameProvider>
+      </WalletProvider>
+    </ThemeProvider>
   );
 }
 

@@ -1,9 +1,9 @@
-// [ESM MIGRATION] Project switched to ESM: module=ESNext, moduleResolution=nodenext
+// [TDD REFACTOR] Enhanced TypeScript configuration for TDD compliance and immutable framework
 {
   "compilerOptions": {
-    "target": "es2020",
-    "module": "NodeNext",
-    "lib": ["es2020", "dom"],
+    "target": "es2022",
+    "module": "ESNext",
+    "lib": ["es2022", "dom", "dom.iterable"],
     "allowJs": true,
     "outDir": "./dist",
     "rootDir": "./",
@@ -32,7 +32,17 @@
       "@test/*": ["test/*"],
       "@artifacts/*": ["artifacts/*"],
       "@deploy/*": ["deploy/*"],
-      "@scripts/*": ["scripts/*"]
+      "@scripts/*": ["scripts/*"],
+      "@types/*": ["types/*"],
+      "@utils/*": ["src/utils/*"],
+      "@ai/*": ["src/ai/*"],
+      "@gaming/*": ["src/gaming/*"],
+      "@blockchain/*": ["src/blockchain/*"],
+      "@api/*": ["src/api/*"],
+      "@database/*": ["src/database/*"],
+      "@monitoring/*": ["src/monitoring/*"],
+      "@bridge/*": ["src/bridge/*"],
+      "@cli/*": ["src/cli/*"]
     },
     "typeRoots": ["./node_modules/@types", "./types"],
     "experimentalDecorators": true,
@@ -43,19 +53,46 @@
     "disableSourceOfProjectReferenceRedirect": true,
     "disableSizeLimit": true,
     "maxNodeModuleJsDepth": 0,
-    "moduleResolution": "nodenext",
+    "moduleResolution": "bundler",
     "allowSyntheticDefaultImports": true,
     "isolatedModules": true,
-    "verbatimModuleSyntax": true,
+    "verbatimModuleSyntax": false,
     "noEmitOnError": false,
-    "preserveWatchOutput": true
+    "preserveWatchOutput": true,
+    "useDefineForClassFields": true,
+    "allowImportingTsExtensions": false,
+    "noEmit": false,
+    "composite": false,
+    "declaration": true,
+    "declarationMap": true,
+    "emitDeclarationOnly": false,
+    "importHelpers": true,
+    "importsNotUsedAsValues": "remove",
+    "jsx": "react-jsx",
+    "jsxImportSource": "react",
+    "keyofStringsOnly": false,
+    "suppressExcessPropertyErrors": false,
+    "suppressImplicitAnyIndexErrors": false,
+    "noImplicitThis": true,
+    "alwaysStrict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "exactOptionalPropertyTypes": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "noPropertyAccessFromIndexSignature": true,
+    "exactOptionalPropertyTypes": true,
+    "allowUnusedLabels": false,
+    "allowUnreachableCode": false
   },
   "include": [
     "src/**/*",
-    "test/**/*",
     "scripts/**/*",
     "deploy/**/*",
-    "types/**/*"
+    "types/**/*",
+    "gdi-dapp/src/**/*"
   ],
   "exclude": [
     "node_modules",
@@ -64,14 +101,19 @@
     "cache",
     "coverage",
     "**/*.js",
-    "**/*.d.ts"
+    "**/*.d.ts",
+    "test-results"
   ],
   "ts-node": {
-    "require": ["tsconfig-paths/register"],
+    "esm": true,
+    "experimentalSpecifierResolution": "node",
     "transpileOnly": true,
     "files": true,
     "compilerOptions": {
-      "module": "NodeNext"
+      "module": "ESNext",
+      "moduleResolution": "bundler",
+      "target": "es2022",
+      "lib": ["es2022", "dom", "dom.iterable"]
     }
   },
   "files": [

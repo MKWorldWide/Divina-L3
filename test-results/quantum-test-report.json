@@ -1,0 +1,40 @@
+{
+  "timestamp": "2025-07-14T00:49:42.819Z",
+  "metrics": {
+    "startTime": 1752454182799,
+    "totalTests": 0,
+    "passedTests": 0,
+    "failedTests": 3,
+    "skippedTests": 0,
+    "testSuites": [],
+    "errors": [
+      {
+        "suite": "Blockchain Critical Tests",
+        "error": "spawn npx ENOENT",
+        "code": -1
+      },
+      {
+        "suite": "Gaming Critical Tests",
+        "error": "spawn npx ENOENT",
+        "code": -1
+      },
+      {
+        "suite": "AI Critical Tests",
+        "error": "spawn npx ENOENT",
+        "code": -1
+      }
+    ]
+  },
+  "config": {
+    "timeout": 300000,
+    "retries": 3,
+    "parallel": false,
+    "outputDir": "./test-results",
+    "logLevel": "info"
+  },
+  "summary": {
+    "totalDuration": 17,
+    "successRate": 0,
+    "status": "FAILED"
+  }
+}

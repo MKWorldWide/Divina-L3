@@ -5,14 +5,15 @@
  * @dev Manages game state, player interactions, and blockchain integration
  */
 
-import { WebSocket, Server as WebSocketServer } from 'ws';
+import { WebSocket } from 'ws';
+import { WebSocketServer } from 'ws';
 import { EventEmitter } from 'events';
-import * as GamingTypes from '../types/gaming.mts';
+import type * as GamingTypes from '../types/gaming.mts';
 import { UnifiedAIService } from '../ai/UnifiedAIService';
 import { BlockchainService } from '../blockchain/BlockchainService';
 import { DatabaseService } from '../database/DatabaseService';
-import { Logger } from '../utils/Logger';
 import { RealTimeGamingEngine } from './RealTimeGamingEngine';
+import { Logger } from '../utils/Logger.js';
 
 /**
  * @interface GamingEngineConfig
@@ -40,12 +41,12 @@ export interface GameInstance {
     gameId: string;
     gameType: GamingTypes.GameType;
     config: GamingTypes.GameConfig;
-    state: GamingTypes.GameState;
-    players: Map<string, GamingTypes.PlayerConnection>;
+    state: GamingTypes.IGameState;
+    players: Map<string, GamingTypes.PlayerState>;
     startTime: number;
     endTime?: number;
-    result?: GamingTypes.GameResult;
-    aiAnalysis?: any;
+    result?: GamingTypes.GameActionResult;
+    aiAnalysis?: GamingTypes.AIAnalytics;
     blockchainTx?: string;
     events: GamingTypes.GameEvent[];
 }
@@ -69,12 +70,12 @@ export interface PlayerSession {
  */
 export class GamingEngine extends EventEmitter {
     private config: GamingEngineConfig;
-    private logger: Logger;
     private wss: WebSocketServer;
     private database: DatabaseService;
     private blockchain: BlockchainService;
     private aiService: UnifiedAIService;
     private realTimeEngine: RealTimeGamingEngine;
+    private logger: Logger;
     
     // Game management
     private activeGames: Map<string, GameInstance> = new Map();
@@ -104,7 +105,7 @@ export class GamingEngine extends EventEmitter {
         this.database = new DatabaseService(config.databaseConfig);
         this.blockchain = new BlockchainService(config.blockchainConfig);
         this.aiService = new UnifiedAIService(config.aiConfig);
-        this.realTimeEngine = new RealTimeGamingEngine();
+        this.realTimeEngine = new RealTimeGamingEngine(config.defaultGameConfig);
         
         // Initialize WebSocket server
         this.wss = new WebSocketServer({ port: config.port });
@@ -401,11 +402,19 @@ export class GamingEngine extends EventEmitter {
             }
             
             // Process player action
-            const action: GamingTypes.PlayerAction = {
+            const action: GamingTypes.IGameAction = {
                 playerId,
-                actionType: message.actionType,
+                gameId: session.currentGame || '',
+                type: message.type,
                 data: message.data,
-                timestamp: Date.now()
+                timestamp: Date.now(),
+                success: true,
+                result: {
+                    winner: null,
+                    score: 0,
+                    duration: 0,
+                    completedAt: Date.now()
+                }
             };
             
             const result = await this.processPlayerAction(game, action);
@@ -414,10 +423,17 @@ export class GamingEngine extends EventEmitter {
                 // Update game state
                 game.state = result.newState;
                 game.events.push({
+                    id: `event_${Date.now()}_${Math.random()}`,
                     type: 'player_action',
                     playerId,
-                    action,
-                    timestamp: Date.now()
+                    timestamp: Date.now(),
+                    data: action,
+                    metadata: {
+                        gameId: session.currentGame || '',
+                        actionType: action.type,
+                        playerId: playerId,
+                        timestamp: Date.now()
+                    }
                 });
                 
                 // Broadcast to all players in game
@@ -480,7 +496,12 @@ export class GamingEngine extends EventEmitter {
                 
                 // Check if game should end
                 if (game.players.size < 2) {
-                    await this.endGame(gameId, { winner: null, reason: 'insufficient_players' });
+                    await this.endGame(gameId, { 
+                        score: 0,
+                        duration: 0,
+                        completedAt: Date.now(),
+                        reason: 'insufficient_players'
+                    });
                 }
             }
             
@@ -564,6 +585,7 @@ export class GamingEngine extends EventEmitter {
      * @returns Available game or null
      */
     private findAvailableGame(gameType: GamingTypes.GameType, config: GamingTypes.GameConfig): GameInstance | null {
+        // TODO: Check type of game.state.status, should match IGameState
         for (const game of this.activeGames.values()) {
             if (game.gameType === gameType && 
                 game.players.size < this.config.maxPlayersPerGame &&
@@ -624,23 +646,48 @@ export class GamingEngine extends EventEmitter {
                 return false;
             }
             
-            // Add player to game
+            // TODO: Check type of player object, should match PlayerState
             game.players.set(playerId, {
-                playerId,
-                connection: session.connection,
-                joinedAt: Date.now(),
-                isReady: false
+                id: playerId,
+                currentGameId: gameId,
+                stake: 0,
+                score: 0,
+                rank: 1,
+                joinTime: Date.now(),
+                lastActionTime: Date.now(),
+                isActive: true,
+                stats: session.stats,
+                aiAnalytics: null,
+                inventory: [],
+                abilities: [],
+                position: { x: 0, y: 0 },
+                health: 100,
+                energy: 100,
+                status: 'active'
             });
             
-            // Update game state
+            // TODO: Check type of game.state.players, should match PlayerState[]
             game.state.players.push({
                 id: playerId,
+                currentGameId: gameId,
+                stake: 0,
+                score: 0,
+                rank: 1,
+                joinTime: Date.now(),
+                lastActionTime: Date.now(),
+                isActive: true,
                 stats: session.stats,
-                isActive: true
+                aiAnalytics: null,
+                inventory: [],
+                abilities: [],
+                position: { x: 0, y: 0 },
+                health: 100,
+                energy: 100,
+                status: 'active'
             });
             
             // Check if game should start
-            if (game.players.size >= game.config.minPlayers) {
+            if (game.players.size >= game.config.maxPlayers) {
                 await this.startGame(gameId);
             }
             
@@ -662,7 +709,7 @@ export class GamingEngine extends EventEmitter {
             const game = this.activeGames.get(gameId);
             if (!game) return;
             
-            // Update game state
+            // TODO: Check type of game.state.status, should match IGameState
             game.state.status = 'active';
             game.state.startTime = Date.now();
             
@@ -689,12 +736,12 @@ export class GamingEngine extends EventEmitter {
      * @param gameId Game ID
      * @param result Game result
      */
-    private async endGame(gameId: string, result: GamingTypes.GameResult): Promise<void> {
+    private async endGame(gameId: string, result: GamingTypes.GameActionResult): Promise<void> {
         try {
             const game = this.activeGames.get(gameId);
             if (!game) return;
             
-            // Update game state
+            // TODO: Check type of game.state.status, should match IGameState
             game.state.status = 'completed';
             game.endTime = Date.now();
             game.result = result;
@@ -729,6 +776,7 @@ export class GamingEngine extends EventEmitter {
             for (const playerId of game.players.keys()) {
                 const session = this.playerSessions.get(playerId);
                 if (session) {
+                    // TODO: Check type of session.currentGame, should match PlayerSession
                     session.currentGame = undefined;
                 }
             }
@@ -747,7 +795,7 @@ export class GamingEngine extends EventEmitter {
      * @param action Player action
      * @returns Processing result
      */
-    private async processPlayerAction(game: GameInstance, action: GamingTypes.PlayerAction): Promise<any> {
+    private async processPlayerAction(game: GameInstance, action: GamingTypes.IGameAction): Promise<any> {
         try {
             // Validate action
             const validation = this.validatePlayerAction(game, action);
@@ -792,14 +840,22 @@ export class GamingEngine extends EventEmitter {
      */
     private getDefaultPlayerStats(): GamingTypes.PlayerStats {
         return {
-            playerId: '',
             gamesPlayed: 0,
             gamesWon: 0,
             winRate: 0,
             averageScore: 0,
-            skillLevel: 50,
             totalPlayTime: 0,
-            lastGameTime: 0
+            lastGameTime: 0,
+            totalEarnings: 0,
+            totalStaked: 0,
+            rank: 1,
+            experience: 0,
+            level: 1,
+            achievements: [],
+            abilities: [],
+            position: { x: 0, y: 0 },
+            health: 100,
+            isConnected: true
         };
     }
     
@@ -821,7 +877,7 @@ export class GamingEngine extends EventEmitter {
      * @param config Game configuration
      * @returns Initial game state
      */
-    private createInitialGameState(gameType: GamingTypes.GameType, config: GamingTypes.GameConfig): GamingTypes.GameState {
+    private createInitialGameState(gameType: GamingTypes.GameType, config: GamingTypes.GameConfig): GamingTypes.IGameState {
         return {
             gameId: '',
             status: 'waiting',
@@ -831,9 +887,15 @@ export class GamingEngine extends EventEmitter {
             endTime: 0,
             totalPot: 0,
             currentRound: 0,
-            maxRounds: config.maxRounds || 10,
-            winner: null,
-            metadata: {}
+            metadata: {
+                name: 'Default Game',
+                description: 'A default game instance',
+                version: '1.0.0',
+                creator: 'GameDin',
+                tags: ['default'],
+                thumbnail: '',
+                banner: ''
+            }
         };
     }
     
@@ -854,20 +916,20 @@ export class GamingEngine extends EventEmitter {
      * @param action Player action
      * @returns Validation result
      */
-    private validatePlayerAction(game: GameInstance, action: GamingTypes.PlayerAction): { valid: boolean; error?: string } {
+    private validatePlayerAction(game: GameInstance, action: GamingTypes.IGameAction): { valid: boolean; error?: string } {
         // Check if player is in game
         if (!game.players.has(action.playerId)) {
             return { valid: false, error: 'Player not in game' };
         }
         
-        // Check if game is active
+        // TODO: Check type of game.state.status, should match IGameState
         if (game.state.status !== 'active') {
             return { valid: false, error: 'Game not active' };
         }
         
         // Validate action type
         const validActions = ['move', 'attack', 'defend', 'use_item', 'skip'];
-        if (!validActions.includes(action.actionType)) {
+        if (!validActions.includes(action.type)) {
             return { valid: false, error: 'Invalid action type' };
         }
         
@@ -881,6 +943,7 @@ export class GamingEngine extends EventEmitter {
      */
     private async performGameAnalysis(game: GameInstance): Promise<void> {
         try {
+            // TODO: Check type of analysis, should match AIAnalytics
             for (const playerId of game.players.keys()) {
                 const analysis = await this.aiService.analyzePlayer(playerId, game.gameId);
                 game.aiAnalysis = analysis;
@@ -899,6 +962,7 @@ export class GamingEngine extends EventEmitter {
     private async processGameTransactions(game: GameInstance): Promise<void> {
         try {
             // Process rewards and fees
+            // TODO: Check type of txHash, should match string
             const txHash = await this.blockchain.processGameResult(game);
             game.blockchainTx = txHash;
             this.metrics.blockchainTransactions++;
@@ -914,6 +978,7 @@ export class GamingEngine extends EventEmitter {
      */
     private async updatePlayerStats(game: GameInstance): Promise<void> {
         try {
+            // TODO: Check type of result, should match GameActionResult
             for (const playerId of game.players.keys()) {
                 await this.database.updatePlayerStats(playerId, game.result!);
             }
@@ -928,6 +993,7 @@ export class GamingEngine extends EventEmitter {
      */
     private async loadGameConfigurations(): Promise<void> {
         // Load game configurations from database
+        // TODO: Check type of configs, should match GameConfig[]
         const configs = await this.database.getGameConfigurations();
         // Apply configurations
     }
@@ -972,13 +1038,20 @@ export class GamingEngine extends EventEmitter {
      */
     private processGame(game: GameInstance): void {
         // Process game logic
+        // TODO: Check type of game.state.status, should match IGameState
         if (game.state.status === 'active') {
             this.realTimeEngine.updateGame(game);
         }
         
         // Check for timeouts
+        // TODO: Check type of result object, should match GameActionResult
         if (Date.now() - game.startTime > this.config.gameTimeout) {
-            this.endGame(game.gameId, { winner: null, reason: 'timeout' });
+            this.endGame(game.gameId, { 
+                score: 0,
+                duration: 0,
+                completedAt: Date.now(),
+                reason: 'timeout'
+            });
         }
     }
     
@@ -1074,7 +1147,12 @@ export class GamingEngine extends EventEmitter {
             
             // Close all games
             for (const gameId of this.activeGames.keys()) {
-                await this.endGame(gameId, { winner: null, reason: 'shutdown' });
+                await this.endGame(gameId, { 
+                    score: 0,
+                    duration: 0,
+                    completedAt: Date.now(),
+                    reason: 'shutdown'
+                });
             }
             
             // Close WebSocket server

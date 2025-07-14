@@ -29,7 +29,7 @@ import { useAI } from '../contexts/AIContext';
 
 const Header: React.FC = () => {
   const theme = useTheme();
-  const { account, connect, disconnect, balance, isConnected } = useWallet();
+  const { account, connect, disconnect, balance } = useWallet();
   const { activeGames, notifications } = useGame();
   const { aiStatus } = useAI();
   
@@ -128,7 +128,7 @@ const Header: React.FC = () => {
         </IconButton>
 
         {/* Wallet Connection */}
-        {!isConnected ? (
+        {!account ? (
           <Button
             variant="contained"
             startIcon={<AccountBalanceWallet />}

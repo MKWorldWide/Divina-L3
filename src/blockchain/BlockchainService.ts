@@ -6,7 +6,7 @@
  */
 
 import { ethers, Contract, Wallet, providers } from 'ethers';
-import { 
+import type { 
     GameResult, 
     BlockchainTransaction, 
     SmartContractCall,

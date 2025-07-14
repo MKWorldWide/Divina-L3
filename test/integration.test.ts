@@ -12,9 +12,11 @@ import { AthenaMistAI } from '../src/ai/AthenaMistAI';
 
 // Import contract ABIs and addresses - using dynamic import for JSON compatibility
 // Dynamic imports for JSON files to ensure ESM compatibility
-let GamingCoreABI: any;
-let GDITokenABI: any;
-let AIOracleABI: any;
+import type { GamingCoreABI, GDITokenABI, AIOracleABI } from '../artifacts/contracts/types';
+
+let GamingCoreABI: GamingCoreABI;
+let GDITokenABI: GDITokenABI;
+let AIOracleABI: AIOracleABI;
 
 // Load ABIs dynamically
 async function loadABIs() {

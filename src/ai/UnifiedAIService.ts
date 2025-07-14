@@ -7,7 +7,7 @@
 
 import { NovaSanctumAI, NovaSanctumConfig } from './NovaSanctumAI';
 import { AthenaMistAI, AthenaMistConfig } from './AthenaMistAI';
-import { AIAnalytics, AIRequestType, PlayerStats, GameState } from '../types/gaming';
+import type { AIAnalytics, AIRequestType, PlayerStats, GameState } from '../types/gaming.mts';
 import { Logger } from '../utils/Logger';
 import { DatabaseService } from '../database/DatabaseService';
 import { BlockchainService } from '../blockchain/BlockchainService';

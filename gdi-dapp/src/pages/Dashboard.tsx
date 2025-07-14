@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
   Box,
-  Grid,
   Card,
   CardContent,
   Typography,
@@ -16,12 +15,12 @@ import {
   IconButton,
   useTheme,
 } from '@mui/material';
+import Grid from '@mui/material/Grid';
 import {
   TrendingUp,
   TrendingDown,
   Casino,
   SportsEsports,
-  Puzzle,
   EmojiEvents,
   Psychology,
   AutoAwesome,
@@ -30,6 +29,7 @@ import {
   Analytics,
   Notifications,
 } from '@mui/icons-material';
+import Extension from '@mui/icons-material/Extension';
 import { useNavigate } from 'react-router-dom';
 import { useWallet } from '../contexts/WalletContext';
 import { useGame } from '../contexts/GameContext';
@@ -44,7 +44,7 @@ import QuickActionCard from '../components/QuickActionCard';
 const Dashboard: React.FC = () => {
   const theme = useTheme();
   const navigate = useNavigate();
-  const { account, balance, isConnected } = useWallet();
+  const { account, balance } = useWallet();
   const { activeGames, gameStats, notifications } = useGame();
   const { aiStatus, aiFeatures, currentAnalysis } = useAI();
 
@@ -107,7 +107,7 @@ const Dashboard: React.FC = () => {
     {
       title: 'Puzzle Challenge',
       description: 'Solve brain teasers',
-      icon: <Puzzle />,
+      icon: <Extension />,
       color: '#10b981',
       action: () => navigate('/lobby?category=puzzle'),
     },
@@ -244,7 +244,7 @@ const Dashboard: React.FC = () => {
                       <Avatar sx={{ bgcolor: theme.palette.primary.main }}>
                         {game.type === 'casino' && <Casino />}
                         {game.type === 'esports' && <SportsEsports />}
-                        {game.type === 'puzzle' && <Puzzle />}
+                        {game.type === 'puzzle' && <Extension />}
                         {game.type === 'tournament' && <EmojiEvents />}
                       </Avatar>
                     </ListItemAvatar>

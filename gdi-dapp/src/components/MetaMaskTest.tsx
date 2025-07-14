@@ -27,12 +27,11 @@ import {
   Info,
   Token,
   Casino,
-  Bridge
 } from '@mui/icons-material';
 import { MetaMaskWalletButton } from './MetaMaskWalletButton';
 
-// Import deployed contract addresses
-import deployedAddresses from '../../../deployed-addresses-local.json';
+// Quantum Documentation: The following import previously referenced a file outside the src/ directory, which is not allowed by Create React App's build system. To resolve this, the deployed-addresses-local.json file must be moved into the src/ directory, and the import path updated accordingly. This ensures the build process can include the file and avoids runtime errors. See CRA documentation for details: https://create-react-app.dev/docs/using-json-data/
+import deployedAddresses from '../deployed-addresses-local.json';
 
 interface TestResult {
   test: string;
@@ -57,43 +56,43 @@ export const MetaMaskTest: FC = () => {
 
   // Initialize contracts
   useEffect(() => {
-    if (provider && account) {
-      const signer = provider.getSigner();
-      
-      // Initialize contract instances
-      const contractInstances = {
-        token: new ethers.Contract(
-          deployedAddresses.token,
-          [
-            'function balanceOf(address owner) view returns (uint256)',
-            'function transfer(address to, uint256 amount) returns (bool)',
-            'function name() view returns (string)',
-            'function symbol() view returns (string)',
-            'function decimals() view returns (uint8)'
-          ],
-          signer
-        ),
-        gamingCore: new ethers.Contract(
-          deployedAddresses.gamingCore,
-          [
-            'function createGame(string memory gameType, uint256 entryFee) returns (uint256)',
-            'function joinGame(uint256 gameId) returns (bool)',
-            'function getGameInfo(uint256 gameId) view returns (address, string, uint256, bool)'
-          ],
-          signer
-        ),
-        bridge: new ethers.Contract(
-          deployedAddresses.bridge,
-          [
-            'function bridgeTokens(address token, uint256 amount, uint256 targetChainId) returns (bool)',
-            'function getBridgeInfo() view returns (uint256, uint256)'
-          ],
-          signer
-        )
-      };
-      
-      setContracts(contractInstances);
-    }
+    const setupContracts = async () => {
+      if (provider && account) {
+        const signer = await provider.getSigner();
+        const contractInstances = {
+          token: new ethers.Contract(
+            deployedAddresses.token,
+            [
+              'function balanceOf(address owner) view returns (uint256)',
+              'function transfer(address to, uint256 amount) returns (bool)',
+              'function name() view returns (string)',
+              'function symbol() view returns (string)',
+              'function decimals() view returns (uint8)'
+            ],
+            signer
+          ),
+          gamingCore: new ethers.Contract(
+            deployedAddresses.gamingCore,
+            [
+              'function createGame(string memory gameType, uint256 entryFee) returns (uint256)',
+              'function joinGame(uint256 gameId) returns (bool)',
+              'function getGameInfo(uint256 gameId) view returns (address, string, uint256, bool)'
+            ],
+            signer
+          ),
+          bridge: new ethers.Contract(
+            deployedAddresses.bridge,
+            [
+              'function bridgeTokens(address token, uint256 amount, uint256 targetChainId) returns (bool)',
+              'function getBridgeInfo() view returns (uint256, uint256)'
+            ],
+            signer
+          )
+        };
+        setContracts(contractInstances);
+      }
+    };
+    setupContracts();
   }, [provider, account]);
 
   // Test wallet connection
@@ -188,7 +187,7 @@ export const MetaMaskTest: FC = () => {
     }
 
     try {
-      const signer = provider.getSigner();
+      const signer = await provider.getSigner();
       const amount = ethers.parseEther(transferAmount);
       const tx = await signer.sendTransaction({
         to: recipientAddress,
@@ -379,7 +378,7 @@ export const MetaMaskTest: FC = () => {
               variant="outlined"
               onClick={testBridgeOperations}
               disabled={!account}
-              startIcon={<Bridge />}
+              startIcon={<AccountBalanceWallet />}
             >
               Test Bridge
             </Button>

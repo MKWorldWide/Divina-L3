@@ -25,7 +25,7 @@ import {
   ExpandMore,
   Casino,
   SportsEsports,
-  Puzzle,
+  Extension,
   EmojiEvents,
   TrendingUp,
   Psychology,
@@ -97,7 +97,7 @@ const Sidebar: React.FC = () => {
         {
           id: 'puzzle',
           label: 'Puzzle Games',
-          icon: <Puzzle />,
+          icon: <Extension />,
           path: '/lobby?category=puzzle',
         },
         {

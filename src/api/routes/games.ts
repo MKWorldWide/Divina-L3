@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { body, param, query, validationResult } from 'express-validator';
-import { GameRequest } from '../../types/api';
+import type { GameRequest } from '../../types/api';
 
 const router = Router();
 

@@ -13,7 +13,7 @@ import {
 import {
   Casino,
   SportsEsports,
-  Puzzle,
+  Extension,
   EmojiEvents,
   PlayArrow,
   People,
@@ -52,7 +52,7 @@ const GameCard: React.FC<GameCardProps> = ({ game }) => {
       case 'esports':
         return <SportsEsports />;
       case 'puzzle':
-        return <Puzzle />;
+        return <Extension />;
       case 'tournament':
         return <EmojiEvents />;
       default:

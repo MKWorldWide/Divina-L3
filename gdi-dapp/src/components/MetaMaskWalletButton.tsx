@@ -26,7 +26,8 @@ export const MetaMaskWalletButton: FC<MetaMaskWalletButtonProps> = ({
       }
     } catch (error) {
       console.error('Failed to connect MetaMask:', error);
-      setError(error instanceof Error ? error.message : 'Failed to connect wallet');
+      const err = error as any;
+      setError(err instanceof Error ? err.message : 'Failed to connect wallet');
     } finally {
       setIsConnecting(false);
     }
@@ -40,7 +41,8 @@ export const MetaMaskWalletButton: FC<MetaMaskWalletButtonProps> = ({
       }
     } catch (error) {
       console.error('Failed to disconnect MetaMask:', error);
-      setError(error instanceof Error ? error.message : 'Failed to disconnect wallet');
+      const err = error as any;
+      setError(err instanceof Error ? err.message : 'Failed to disconnect wallet');
     }
   }, [disconnect, onDisconnect]);
 

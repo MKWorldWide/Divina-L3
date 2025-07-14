@@ -5,7 +5,7 @@
  * @dev Provides real-time analysis with high accuracy and low latency
  */
 
-import { AIAnalytics, AIRequestType, PlayerStats, GameState } from '../types/gaming';
+import type { AIAnalytics, AIRequestType, PlayerStats, GameState } from '../types/gaming';
 import { Logger } from '../utils/Logger';
 import { DatabaseService } from '../database/DatabaseService';
 import { BlockchainService } from '../blockchain/BlockchainService';
@@ -829,8 +829,8 @@ export class NovaSanctumAI {
         
         // Player skill mismatch
         const avgOpponentSkill = gameState.players
-            .filter(p => p.id !== playerStats.playerId)
-            .reduce((a, b) => a + b.stats.skillLevel, 0) / (gameState.players.length - 1);
+            .filter(p => p.id !== playerStats.id)
+            .reduce((a, b) => a + b.skillLevel, 0) / (gameState.players.length - 1);
         
         if (Math.abs(playerStats.skillLevel - avgOpponentSkill) > 30) risk += 25;
         

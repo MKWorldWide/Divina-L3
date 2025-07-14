@@ -3,6 +3,8 @@ import { useWeb3React } from '@web3-react/core';
 import { InjectedConnector } from '@web3-react/injected-connector';
 import { WalletConnectConnector } from '@web3-react/walletconnect-connector';
 import { ethers } from 'ethers';
+// ethers v6: use BrowserProvider for browser wallets
+import { BrowserProvider } from 'ethers';
 
 // Types
 interface WalletContextType {
@@ -13,7 +15,7 @@ interface WalletContextType {
   sendTransaction: (to: string, amount: string) => Promise<string>;
   signMessage: (message: string) => Promise<string>;
   chainId: number | null;
-  provider: ethers.Provider | null;
+  provider: BrowserProvider | null;
 }
 
 interface WalletProviderProps {
@@ -38,44 +40,45 @@ const walletconnect = new WalletConnectConnector({
 
 // Provider component
 export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
-  const { account, library, chainId, activate, deactivate } = useWeb3React();
+  const { account, chainId, provider } = useWeb3React();
   const [balance, setBalance] = useState<number>(0);
-  const [provider, setProvider] = useState<ethers.Provider | null>(null);
+  const [providerState, setProviderState] = useState<BrowserProvider | null>(null);
 
   // Update provider when library changes
   useEffect(() => {
-    if (library) {
-      setProvider(library);
+    if (window.ethereum) {
+      setProviderState(new BrowserProvider(window.ethereum));
+    } else {
+      setProviderState(null);
     }
-  }, [library]);
+  }, []);
 
   // Update balance when account or provider changes
   useEffect(() => {
-    if (account && provider) {
+    if (account && providerState) {
       const fetchBalance = async () => {
         try {
-          const balanceWei = await provider.getBalance(account);
+          const balanceWei = await providerState.getBalance(account);
           const balanceEth = parseFloat(ethers.formatEther(balanceWei));
           setBalance(balanceEth);
         } catch (error) {
           console.error('Failed to fetch balance:', error);
         }
       };
-
       fetchBalance();
-      const interval = setInterval(fetchBalance, 10000); // Update every 10 seconds
+      const interval = setInterval(fetchBalance, 10000);
       return () => clearInterval(interval);
     }
-  }, [account, provider]);
+  }, [account, providerState]);
 
   const connect = async () => {
     try {
-      await activate(injected);
+      await injected.activate();
     } catch (error) {
       console.error('Failed to connect:', error);
       // Fallback to WalletConnect
       try {
-        await activate(walletconnect);
+        await walletconnect.activate();
       } catch (wcError) {
         console.error('Failed to connect with WalletConnect:', wcError);
       }
@@ -83,23 +86,26 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
   };
 
   const disconnect = () => {
-    deactivate();
+    injected.deactivate();
+    walletconnect.deactivate();
   };
 
   const sendTransaction = async (to: string, amount: string): Promise<string> => {
-    if (!provider || !account) {
+    if (!providerState || !account) {
       throw new Error('Wallet not connected');
     }
-
     try {
-      const signer = await provider.getSigner();
+      const signer = await providerState.getSigner();
       const tx = await signer.sendTransaction({
         to,
         value: ethers.parseEther(amount),
       });
-
       const receipt = await tx.wait();
-      return receipt.hash;
+      if (receipt && receipt.hash) {
+        return receipt.hash;
+      } else {
+        throw new Error('Transaction failed: no receipt');
+      }
     } catch (error) {
       console.error('Transaction failed:', error);
       throw error;
@@ -107,12 +113,11 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
   };
 
   const signMessage = async (message: string): Promise<string> => {
-    if (!provider || !account) {
+    if (!providerState || !account) {
       throw new Error('Wallet not connected');
     }
-
     try {
-      const signer = await provider.getSigner();
+      const signer = await providerState.getSigner();
       const signature = await signer.signMessage(message);
       return signature;
     } catch (error) {
@@ -121,15 +126,16 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
     }
   };
 
+  // In value, ensure account and chainId are null if undefined
   const value: WalletContextType = {
-    account,
+    account: account ?? null,
     balance,
     connect,
     disconnect,
     sendTransaction,
     signMessage,
-    chainId,
-    provider,
+    chainId: chainId ?? null,
+    provider: providerState,
   };
 
   return (

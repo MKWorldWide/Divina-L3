@@ -7,26 +7,40 @@
  */
 
 import { EventEmitter } from 'events';
-import WebSocket from 'ws';
+import { WebSocket } from 'ws';
+import { WebSocketServer } from 'ws';
 import { v4 as uuidv4 } from 'uuid';
-import * as GamingTypes from '../types/gaming.mts';
+import type * as GamingTypes from '../types/gaming.mts';
 import { NovaSanctumAI } from '../ai/NovaSanctumAI';
 import { AthenaMistAI } from '../ai/AthenaMistAI';
 import { UnifiedAIService } from '../ai/UnifiedAIService';
 import { DatabaseService } from '../database/DatabaseService';
 import { BlockchainService } from '../blockchain/BlockchainService';
-import { Logger } from '../utils/Logger';
 import { ethers } from 'ethers';
-import Redis from 'redis';
+import { createClient } from 'redis';
 import { promisify } from 'util';
+import { Logger } from '../utils/Logger.js';
+
+/**
+ * @interface GameRoom
+ * @description Game room information
+ */
+interface GameRoom {
+    gameId: string;
+    players: Set<string>;
+    gameState: GamingTypes.IGameState;
+    lastActivity: number;
+    maxPlayers: number;
+    gameType: string;
+}
 
 /**
  * @class RealTimeGamingEngine
  * @description High-performance real-time gaming engine with AI integration
  */
 export class RealTimeGamingEngine extends EventEmitter {
-    private wss: WebSocket.Server;
-    private games: Map<string, GamingTypes.GameState> = new Map();
+    private wss: WebSocketServer;
+    private games: Map<string, GamingTypes.IGameState> = new Map();
     private players: Map<string, GamingTypes.PlayerState> = new Map();
     private connections: Map<string, WebSocket> = new Map();
     private gameQueue: string[] = [];
@@ -40,13 +54,15 @@ export class RealTimeGamingEngine extends EventEmitter {
     // Services
     private database: DatabaseService;
     private blockchain: BlockchainService;
-    private logger: Logger;
     
     // Configuration
     private config: GamingTypes.GameConfig;
     private isRunning: boolean = false;
     private tickInterval: NodeJS.Timeout | null = null;
     private aiAnalysisInterval: NodeJS.Timeout | null = null;
+    
+    // Logger instance
+    private logger: Logger;
     
     // Performance metrics
     private metrics = {
@@ -63,8 +79,8 @@ export class RealTimeGamingEngine extends EventEmitter {
         peakTPS: 0
     };
 
-    private provider: ethers.providers.JsonRpcProvider;
-    private redis: Redis.RedisClient;
+    private provider: ethers.JsonRpcProvider;
+    private redis: ReturnType<typeof createClient>;
     private gameRooms: Map<string, GameRoom> = new Map();
     private playerConnections: Map<string, WebSocket> = new Map();
     private novaSanctumOracle: ethers.Contract;
@@ -79,6 +95,8 @@ export class RealTimeGamingEngine extends EventEmitter {
     constructor(config: GamingTypes.GameConfig) {
         super();
         this.config = config;
+        
+        // Initialize logger
         this.logger = new Logger('RealTimeGamingEngine');
         
         // Initialize AI services
@@ -91,27 +109,27 @@ export class RealTimeGamingEngine extends EventEmitter {
         this.blockchain = new BlockchainService(config.blockchainConfig);
         
         // Initialize WebSocket server
-        this.wss = new WebSocket.Server({ 
+        this.wss = new WebSocketServer({ 
             port: config.websocketPort,
             perMessageDeflate: false, // Disable compression for better performance
             maxPayload: 1024 * 1024 // 1MB max payload
         });
         
         // Initialize Ethereum provider
-        this.provider = new ethers.providers.JsonRpcProvider(config.rpcUrl);
+        this.provider = new ethers.JsonRpcProvider(config.rpcUrl || 'http://localhost:8545');
         
         // Initialize Redis for caching
-        this.redis = Redis.createClient(config.redisUrl);
+        this.redis = createClient({ url: config.redisUrl || 'redis://localhost:6379' });
         
-        // Initialize smart contracts
+        // Initialize smart contracts (with fallback addresses)
         this.novaSanctumOracle = new ethers.Contract(
-            config.novaSanctumAddress,
+            config.novaSanctumAddress || '0x0000000000000000000000000000000000000000',
             require('../../abis/NovaSanctumOracle.json'),
             this.provider
         );
         
         this.gameDinToken = new ethers.Contract(
-            config.gameDinTokenAddress,
+            config.gameDinTokenAddress || '0x0000000000000000000000000000000000000000',
             require('../../abis/GameDinToken.json'),
             this.provider
         );
@@ -283,7 +301,7 @@ export class RealTimeGamingEngine extends EventEmitter {
      * @method handleJoinGame
      * @description Handle player joining a game
      */
-    private async handleJoinGame(playerId: string, payload: any): Promise<void> {
+    private async handleJoinGame(playerId: string, payload: GamingTypes.JoinGamePayload): Promise<void> {
         const { gameId, stake, gameType } = payload;
         
         try {
@@ -330,7 +348,7 @@ export class RealTimeGamingEngine extends EventEmitter {
                 currentGameId: gameId,
                 stake,
                 score: 0,
-                rank: 0,
+                rank: 1,
                 joinTime: Date.now(),
                 lastActionTime: Date.now(),
                 isActive: true,
@@ -384,7 +402,7 @@ export class RealTimeGamingEngine extends EventEmitter {
      * @method handleGameAction
      * @description Handle player game action
      */
-    private async handleGameAction(playerId: string, payload: any): Promise<void> {
+    private async handleGameAction(playerId: string, payload: GamingTypes.GameActionPayload): Promise<void> {
         const { gameId, action, data } = payload;
         
         try {
@@ -454,7 +472,7 @@ export class RealTimeGamingEngine extends EventEmitter {
      * @method handleLeaveGame
      * @description Handle player leaving a game
      */
-    private async handleLeaveGame(playerId: string, payload: any): Promise<void> {
+    private async handleLeaveGame(playerId: string, payload: GamingTypes.LeaveGamePayload): Promise<void> {
         const { gameId } = payload;
         
         try {
@@ -500,7 +518,7 @@ export class RealTimeGamingEngine extends EventEmitter {
      * @method handleChatMessage
      * @description Handle player chat message
      */
-    private async handleChatMessage(playerId: string, payload: any): Promise<void> {
+    private async handleChatMessage(playerId: string, payload: GamingTypes.ChatMessagePayload): Promise<void> {
         const { gameId, message } = payload;
         
         try {
@@ -541,7 +559,7 @@ export class RealTimeGamingEngine extends EventEmitter {
      * @method handleTournamentJoin
      * @description Handle player joining a tournament
      */
-    private async handleTournamentJoin(playerId: string, payload: any): Promise<void> {
+    private async handleTournamentJoin(playerId: string, payload: GamingTypes.TournamentJoinPayload): Promise<void> {
         const { tournamentId, stake } = payload;
         
         try {
@@ -597,7 +615,7 @@ export class RealTimeGamingEngine extends EventEmitter {
      * @method handleAIAnalysisRequest
      * @description Handle AI analysis request
      */
-    private async handleAIAnalysisRequest(playerId: string, payload: any): Promise<void> {
+    private async handleAIAnalysisRequest(playerId: string, payload: GamingTypes.AIAnalysisRequestPayload): Promise<void> {
         const { gameId, analysisType } = payload;
         
         try {
@@ -661,8 +679,8 @@ export class RealTimeGamingEngine extends EventEmitter {
      * @method createGame
      * @description Create a new game
      */
-    private async createGame(gameId: string, gameType: string, stake: number): Promise<GamingTypes.GameState> {
-        const game: GamingTypes.GameState = {
+    private async createGame(gameId: string, gameType: string, stake: number): Promise<GamingTypes.IGameState> {
+        const game: GamingTypes.IGameState = {
             id: gameId,
             type: gameType,
             state: 'waiting',
@@ -809,9 +827,9 @@ export class RealTimeGamingEngine extends EventEmitter {
         playerId: string, 
         gameId: string, 
         analysisType: string
-    ): Promise<GamingTypes.AIAnalysis> {
+    ): Promise<GamingTypes.AIAnalytics> {
         try {
-            let analysis: GamingTypes.AIAnalysis;
+            let analysis: GamingTypes.AIAnalytics;
             
             switch (analysisType) {
                 case 'novaSanctum':
@@ -926,7 +944,7 @@ export class RealTimeGamingEngine extends EventEmitter {
      */
     private startPerformanceMonitoring(): void {
         setInterval(() => {
-            this.logger.info('Performance metrics:', this.metrics);
+            this.logger.info(`Performance metrics: ${JSON.stringify(this.metrics)}`);
             this.emit('metrics:update', this.metrics);
         }, 60000); // Log every minute
     }
@@ -1011,7 +1029,15 @@ export class RealTimeGamingEngine extends EventEmitter {
             totalStaked: 0,
             winRate: 0,
             averageScore: 0,
-            lastGameTime: 0
+            lastGameTime: 0,
+            totalPlayTime: 0,
+            rank: 1,
+            experience: 0,
+            level: 1,
+            achievements: [],
+            abilities: [],
+                            position: { x: 0, y: 0 },
+                health: 100
         };
     }
     
@@ -1026,7 +1052,7 @@ export class RealTimeGamingEngine extends EventEmitter {
     private async saveAllGameStates(): Promise<void> {
         // Save all active game states
         for (const [gameId, game] of this.games) {
-            await this.database.saveGameState(game);
+            await this.database.saveGameState(gameId, game);
         }
     }
     
@@ -1048,12 +1074,60 @@ export class RealTimeGamingEngine extends EventEmitter {
     getMetrics() {
         return { ...this.metrics };
     }
+
+    /**
+     * @method initialize
+     * @description Initialize the gaming engine
+     */
+    async initialize(): Promise<void> {
+        try {
+            this.logger.info('Initializing RealTimeGamingEngine...');
+            // Connect to Redis
+            await this.redis.connect();
+            this.logger.info('RealTimeGamingEngine initialized successfully');
+        } catch (error) {
+            this.logger.error('Failed to initialize RealTimeGamingEngine:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * @method processAction
+     * @description Process a game action
+     */
+    async processAction(game: any, action: GamingTypes.IGameAction): Promise<any> {
+        // TODO: Implement proper action processing
+        return {
+            success: true,
+            newState: game.state,
+            gameEnded: false,
+            gameResult: null
+        };
+    }
+
+    /**
+     * @method initializeGame
+     * @description Initialize a game
+     */
+    async initializeGame(game: any): Promise<void> {
+        // TODO: Implement proper game initialization
+        this.logger.info(`Initializing game ${game.gameId}`);
+    }
+
+    /**
+     * @method updateGame
+     * @description Update a game
+     */
+    updateGame(game: any): void {
+        // TODO: Implement proper game update
+        this.logger.info(`Updating game ${game.gameId}`);
+    }
     
     /**
      * @method getActiveGames
      * @description Get list of active games
      */
-    getActiveGames(): GamingTypes.GameState[] {
+    getActiveGames(): GamingTypes.IGameState[] {
         return Array.from(this.games.values()).filter(game => game.state === 'active');
     }
     
@@ -1082,7 +1156,7 @@ export class RealTimeGamingEngine extends EventEmitter {
         });
 
         this.wss.on('error', (error) => {
-            console.error('WebSocket server error:', error);
+            this.logger.error('WebSocket server error:', error);
             this.emit('error', error);
         });
     }
@@ -1112,7 +1186,7 @@ export class RealTimeGamingEngine extends EventEmitter {
                 const message = JSON.parse(data.toString());
                 await this.handleGameMessage(playerId, message);
             } catch (error) {
-                console.error('Error handling game message:', error);
+                this.logger.error('Error handling game message:', error);
                 this.sendError(ws, 'Invalid message format');
             }
         });
@@ -1122,7 +1196,7 @@ export class RealTimeGamingEngine extends EventEmitter {
         });
 
         ws.on('error', (error) => {
-            console.error(`WebSocket error for player ${playerId}:`, error);
+            this.logger.error(`WebSocket error for player ${playerId}:`, error);
             this.handlePlayerDisconnect(playerId);
         });
 
@@ -1138,7 +1212,7 @@ export class RealTimeGamingEngine extends EventEmitter {
             }
         });
 
-        console.log(`🎮 Player ${playerId} connected`);
+        this.logger.info(`🎮 Player ${playerId} connected`);
     }
 
     /**
@@ -1178,7 +1252,7 @@ export class RealTimeGamingEngine extends EventEmitter {
             this.updateLatencyMetrics(latency);
             
         } catch (error) {
-            console.error(`Error processing message from ${playerId}:`, error);
+            this.logger.error(`Error processing message from ${playerId}:`, error);
             this.sendError(this.playerConnections.get(playerId), 'Internal server error');
         }
     }
@@ -1220,15 +1294,27 @@ export class RealTimeGamingEngine extends EventEmitter {
         room.players.add(playerId);
         room.lastActivity = Date.now();
         
-        // Initialize player state
-        const playerState: GamingTypes.PlayerState = {
-            address: playerId,
-            position: { x: 0, y: 0 },
-            health: 100,
-            score: 0,
-            lastAction: Date.now(),
-            isConnected: true
-        };
+                    // Initialize player state
+            const playerState: GamingTypes.PlayerState = {
+                id: playerId,
+                currentGameId: gameId,
+                stake: 0,
+                score: 0,
+                rank: 1,
+                joinTime: Date.now(),
+                lastActionTime: Date.now(),
+                isActive: true,
+                stats: await this.getPlayerStats(playerId),
+                aiAnalytics: null,
+                inventory: [],
+                abilities: [],
+                position: { x: 0, y: 0 },
+                health: 100,
+                energy: 100,
+                status: 'active',
+                energy: 100,
+                status: 'active'
+            };
         
         room.gameState.players.set(playerId, playerState);
         
@@ -1248,7 +1334,7 @@ export class RealTimeGamingEngine extends EventEmitter {
             timestamp: Date.now()
         });
         
-        console.log(`🎮 Player ${playerId} joined game ${gameId}`);
+        this.logger.info(`🎮 Player ${playerId} joined game ${gameId}`);
     }
 
     /**
@@ -1272,12 +1358,18 @@ export class RealTimeGamingEngine extends EventEmitter {
         }
         
         // Process game action
-        const gameAction: GamingTypes.GameAction = {
+        const gameAction: GamingTypes.IGameAction = {
             type: actionType,
-            player: playerId,
+            playerId: playerId,
             gameId: gameId,
             data: data,
-            timestamp: Date.now()
+            timestamp: Date.now(),
+            success: true,
+                            result: {
+                    score: 0,
+                    duration: 0,
+                    completedAt: Date.now()
+                }
         };
         
         // Update game state based on action
@@ -1295,7 +1387,7 @@ export class RealTimeGamingEngine extends EventEmitter {
         await this.submitActionToBlockchain(gameAction, aiValidation);
         
         this.metrics.totalActions++;
-        console.log(`🎮 Action processed: ${actionType} by ${playerId} in ${gameId}`);
+        this.logger.info(`🎮 Action processed: ${actionType} by ${playerId} in ${gameId}`);
     }
 
     /**
@@ -1306,7 +1398,7 @@ export class RealTimeGamingEngine extends EventEmitter {
         gameId: string,
         actionType: string,
         data: any
-    ): Promise<NovaSanctumResponse> {
+    ): Promise<GamingTypes.NovaSanctumResponse> {
         try {
             // Call NovaSanctum Oracle contract
             const isValid = await this.novaSanctumOracle.validatePlayerAction(
@@ -1315,7 +1407,7 @@ export class RealTimeGamingEngine extends EventEmitter {
                 actionType,
                 0, // XP amount (calculated later)
                 0, // Token amount (calculated later)
-                ethers.utils.toUtf8Bytes(JSON.stringify(data))
+                ethers.toUtf8Bytes(JSON.stringify(data))
             );
             
             // In a real implementation, you would get more detailed analysis
@@ -1327,7 +1419,7 @@ export class RealTimeGamingEngine extends EventEmitter {
                 reason: isValid ? 'Action validated' : 'Suspicious activity detected'
             };
         } catch (error) {
-            console.error('AI validation error:', error);
+            this.logger.error('AI validation error:', error);
             // Fallback to basic validation
             return {
                 isValid: true,
@@ -1342,8 +1434,8 @@ export class RealTimeGamingEngine extends EventEmitter {
     /**
      * Process game action and update state
      */
-    private async processGameAction(room: GameRoom, action: GamingTypes.GameAction): Promise<void> {
-        const playerState = room.gameState.players.get(action.player);
+    private async processGameAction(room: GameRoom, action: GamingTypes.IGameAction): Promise<void> {
+        const playerState = room.gameState.players.get(action.playerId);
         if (!playerState) return;
         
         // Update player state based on action type
@@ -1380,8 +1472,8 @@ export class RealTimeGamingEngine extends EventEmitter {
      * Submit action to blockchain for rewards
      */
     private async submitActionToBlockchain(
-        action: GamingTypes.GameAction,
-        aiValidation: NovaSanctumResponse
+        action: GamingTypes.IGameAction,
+        aiValidation: GamingTypes.NovaSanctumResponse
     ): Promise<void> {
         try {
             // Calculate rewards based on action and AI validation
@@ -1390,17 +1482,17 @@ export class RealTimeGamingEngine extends EventEmitter {
             
             // Submit to GameDin Token contract
             // Note: In production, this would be done by a relayer or the game contract
-            console.log(`💰 Rewards calculated: ${xpReward} XP, ${tokenReward} tokens for ${action.player}`);
+            this.logger.info(`💰 Rewards calculated: ${xpReward} XP, ${tokenReward} tokens for ${action.playerId}`);
             
         } catch (error) {
-            console.error('Error submitting to blockchain:', error);
+            this.logger.error('Error submitting to blockchain:', error);
         }
     }
 
     /**
      * Calculate XP reward for an action
      */
-    private calculateXPReward(action: GamingTypes.GameAction, aiValidation: NovaSanctumResponse): number {
+    private calculateXPReward(action: GamingTypes.IGameAction, aiValidation: GamingTypes.NovaSanctumResponse): number {
         let baseXP = 10;
         
         switch (action.type) {
@@ -1423,7 +1515,7 @@ export class RealTimeGamingEngine extends EventEmitter {
     /**
      * Calculate token reward for an action
      */
-    private calculateTokenReward(action: GamingTypes.GameAction, aiValidation: NovaSanctumResponse): number {
+    private calculateTokenReward(action: GamingTypes.IGameAction, aiValidation: GamingTypes.NovaSanctumResponse): number {
         let baseTokens = 1;
         
         switch (action.type) {
@@ -1468,7 +1560,7 @@ export class RealTimeGamingEngine extends EventEmitter {
             this.metrics.activeGames--;
         }
         
-        console.log(`🎮 Player ${playerId} left game ${gameId}`);
+        this.logger.info(`🎮 Player ${playerId} left game ${gameId}`);
     }
 
     /**
@@ -1487,7 +1579,7 @@ export class RealTimeGamingEngine extends EventEmitter {
             }
         }
         
-        console.log(`🎮 Player ${playerId} disconnected`);
+        this.logger.info(`🎮 Player ${playerId} disconnected`);
     }
 
     /**
@@ -1561,10 +1653,10 @@ export class RealTimeGamingEngine extends EventEmitter {
     /**
      * Sanitize game state for transmission
      */
-    private sanitizeGameState(gameState: GamingTypes.GameState): any {
+    private sanitizeGameState(gameState: GamingTypes.IGameState): any {
         const sanitized: any = {
-            gameId: gameState.gameId,
-            status: gameState.status,
+            gameId: gameState.id,
+            status: gameState.state,
             lastUpdate: gameState.lastUpdate,
             players: {}
         };
@@ -1623,7 +1715,7 @@ export class RealTimeGamingEngine extends EventEmitter {
             // Emit metrics
             this.emit('metrics', this.metrics);
             
-            console.log(`📊 Gaming Metrics: ${this.metrics.activeGames} active games, ${this.playerConnections.size} connected players, ${this.metrics.averageLatency}ms avg latency`);
+            this.logger.info(`📊 Gaming Metrics: ${this.metrics.activeGames} active games, ${this.playerConnections.size} connected players, ${this.metrics.averageLatency}ms avg latency`);
         }, 60000); // Every minute
     }
 
@@ -1660,7 +1752,7 @@ export class RealTimeGamingEngine extends EventEmitter {
      * Graceful shutdown
      */
     public async shutdown(): Promise<void> {
-        console.log('🔄 Shutting down GameDin Real-Time Gaming Engine...');
+        this.logger.info('🔄 Shutting down GameDin Real-Time Gaming Engine...');
         
         // Close all WebSocket connections
         for (const [playerId, ws] of this.playerConnections) {
@@ -1673,7 +1765,7 @@ export class RealTimeGamingEngine extends EventEmitter {
         // Close Redis connection
         this.redis.quit();
         
-        console.log('✅ GameDin Real-Time Gaming Engine shutdown complete');
+        this.logger.info('✅ GameDin Real-Time Gaming Engine shutdown complete');
     }
 } 
 

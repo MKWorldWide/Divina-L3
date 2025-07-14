@@ -5,7 +5,7 @@
  * @dev Provides deep insights into gaming patterns and strategic recommendations
  */
 
-import { AIAnalytics, AIRequestType, PlayerStats, GameState } from '../types/gaming';
+import type { AIAnalytics, AIRequestType, PlayerStats, GameState } from '../types/gaming';
 import { Logger } from '../utils/Logger';
 import { DatabaseService } from '../database/DatabaseService';
 import { BlockchainService } from '../blockchain/BlockchainService';

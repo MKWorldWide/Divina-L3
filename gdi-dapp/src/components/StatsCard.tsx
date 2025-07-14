@@ -70,16 +70,28 @@ const StatsCard: React.FC<StatsCardProps> = ({
           >
             {icon}
           </Box>
-          <Chip
-            label={trendValue}
-            size="small"
-            icon={getTrendIcon()}
-            sx={{
-              color: getTrendColor(),
-              backgroundColor: `${getTrendColor()}20`,
-              border: `1px solid ${getTrendColor()}40`,
-            }}
-          />
+          {getTrendIcon() ? (
+            <Chip
+              label={trendValue}
+              size="small"
+              icon={getTrendIcon()}
+              sx={{
+                color: getTrendColor(),
+                backgroundColor: `${getTrendColor()}20`,
+                border: `1px solid ${getTrendColor()}40`,
+              }}
+            />
+          ) : (
+            <Chip
+              label={trendValue}
+              size="small"
+              sx={{
+                color: getTrendColor(),
+                backgroundColor: `${getTrendColor()}20`,
+                border: `1px solid ${getTrendColor()}40`,
+              }}
+            />
+          )}
         </Box>
         
         <Typography

@@ -1,3 +1,4 @@
+import React from 'react';
 import { FC, useMemo } from 'react';
 import {
   ConnectionProvider,
