@@ -94,7 +94,7 @@ GameDin L3 is a revolutionary Layer 3 gaming blockchain ecosystem that combines 
 - `gateway.ts`: Main server setup
 - `routes/ai.ts`: AI service endpoints
 - `routes/games.ts`: Game management endpoints
-- Middleware for authentication and validation
+- `routes/gdi.route.ts`: GDIService endpoints for wallet, tier, and access queries
 
 **Features:**
 - RESTful API design
@@ -102,6 +102,16 @@ GameDin L3 is a revolutionary Layer 3 gaming blockchain ecosystem that combines 
 - WebSocket upgrade handling
 - Request/response logging
 - Error handling and monitoring
+
+#### GDIService Component
+- **Purpose:** Provide universal wallet/tier/access API for all games and apps
+- **Integration:** Used by Unity, VRChat, web apps, and internal services
+- **Dependencies:** GDITier.ts, mockData.json, auth.middleware.ts
+- **Data Flow:**
+  1. External app requests balance/tier/access
+  2. GDIService reads from mockData.json (dev) or blockchain (prod)
+  3. Returns result to client
+- **See also:** [SYSTEM_OVERVIEW.md](SYSTEM_OVERVIEW.md), [API_REFERENCE.md](API_REFERENCE.md#gdiservice-endpoints)
 
 ### 3. AI Services Layer
 

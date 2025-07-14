@@ -152,6 +152,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Development tools setup
 - Documentation foundation
 
+## [Unreleased]
+### Added
+- feat(gdi): Scaffolded GDIService system with quantum-detailed documentation, API endpoints, and mock data for wallet/tier/access queries.
+- Added /src/gdi-service/ with GDIService.ts, GDITier.ts, and mockData.json.
+- Added Express API route /gdi with endpoints for balance, tier, and access checks.
+- Updated README.md, API_REFERENCE.md, SYSTEM_OVERVIEW.md, ARCHITECTURE.md, and DEVELOPER_GUIDE.md with GDIService documentation, usage, and integration details.
+
 ---
 
 ## Version History

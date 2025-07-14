@@ -145,6 +145,34 @@ npm run start:dev
 - **🔄 Fallback Mechanisms**: Reliability through service redundancy
 - **📊 Performance Metrics**: Real-time AI service monitoring
 
+## 🌐 GDIService: Global Divine Infrastructure API
+
+The GDIService module provides a universal API for querying GDI token balances, user tier levels, and access gates for all games, worlds, and apps built on the Divina Layer 3 Chain.
+
+### Endpoints
+- `GET /gdi/balance/:address` — Returns the GDI token balance for a wallet address.
+- `GET /gdi/tier/:address` — Returns the GDI tier (Divine, Celestial, Ascendant, Mortal) for a wallet address.
+- `GET /gdi/can-access/:address/:requiredTier` — Checks if a wallet address meets or exceeds a required tier.
+
+### Example Usage
+```bash
+curl http://localhost:3000/gdi/balance/0xuser1
+# { "address": "0xuser1", "balance": 1500 }
+
+curl http://localhost:3000/gdi/tier/0xuser2
+# { "address": "0xuser2", "tier": "Ascendant" }
+
+curl http://localhost:3000/gdi/can-access/0xuser3/Celestial
+# { "address": "0xuser3", "requiredTier": "Celestial", "canAccess": false }
+```
+
+### Integration
+- **Unity/VRChat/Web**: Call these endpoints to gate features, display user tiers, or check wallet eligibility.
+- **See also:** [API_REFERENCE.md](docs/API_REFERENCE.md#gdiservice-endpoints), [SYSTEM_OVERVIEW.md](docs/SYSTEM_OVERVIEW.md)
+
+### Architecture Update
+- **Core Components Table:** Add `GDIService` as a new API module for wallet/tier/access logic.
+
 ## 🚀 Deployment
 
 ### Development Environment

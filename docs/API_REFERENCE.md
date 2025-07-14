@@ -1062,3 +1062,52 @@ ai_analysis = client.ai.nova_sanctum.analyze(data)
 ---
 
 This API reference provides comprehensive documentation for all GameDin L3 + AthenaMist AI endpoints. For additional support, please refer to the developer documentation or contact the development team. 
+
+## 🌐 GDIService Endpoints
+
+The GDIService API provides universal wallet, tier, and access queries for all Divina Layer 3 games and apps.
+
+### GET /gdi/balance/:address
+- **Description:** Returns the GDI token balance for a wallet address.
+- **Params:** `address` (string, required)
+- **Response:**
+```json
+{ "address": "0xuser1", "balance": 1500 }
+```
+- **Example:**
+```bash
+curl http://localhost:3000/gdi/balance/0xuser1
+```
+
+### GET /gdi/tier/:address
+- **Description:** Returns the GDI tier for a wallet address.
+- **Params:** `address` (string, required)
+- **Response:**
+```json
+{ "address": "0xuser2", "tier": "Ascendant" }
+```
+- **Example:**
+```bash
+curl http://localhost:3000/gdi/tier/0xuser2
+```
+
+### GET /gdi/can-access/:address/:requiredTier
+- **Description:** Checks if a wallet address meets or exceeds a required tier.
+- **Params:**
+  - `address` (string, required)
+  - `requiredTier` (string, required; one of Divine, Celestial, Ascendant, Mortal)
+- **Response:**
+```json
+{ "address": "0xuser3", "requiredTier": "Celestial", "canAccess": false }
+```
+- **Example:**
+```bash
+curl http://localhost:3000/gdi/can-access/0xuser3/Celestial
+```
+
+#### Security
+- All endpoints are protected by `auth.middleware.ts` (currently a stub; production will require JWT or API token).
+
+#### See Also
+- [GDITier.ts](../src/gdi-service/GDITier.ts) for tier logic.
+- [auth.middleware.ts](../src/api/auth.middleware.ts) for authentication. 

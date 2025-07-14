@@ -1027,3 +1027,30 @@ npx hardhat compile
 ---
 
 This developer guide provides comprehensive information for contributing to the GameDin L3 + AthenaMist AI project. For additional support, please reach out to the development team or check the project documentation. 
+
+## 🚀 GDIService Developer Onboarding
+
+### Directory Structure
+- `/src/gdi-service/`
+  - `GDIService.ts`: Core logic for wallet/tier/access queries
+  - `GDITier.ts`: Enum and logic for tier thresholds
+  - `mockData.json`: Dev/test wallet balances
+
+### Usage
+- Import and use `GDIService` in backend code, or call API endpoints from any client (Unity, VRChat, web, etc).
+- To add new tiers, update `GDITier.ts` and thresholds.
+- To connect to real data, replace mockData.json logic in `GDIService.ts` with blockchain or DB queries.
+- Secure endpoints by implementing real auth in `auth.middleware.ts`.
+
+### API Integration Example (Unity/C#)
+```csharp
+using System.Net.Http;
+var client = new HttpClient();
+var response = await client.GetAsync("http://localhost:3000/gdi/balance/0xuser1");
+var json = await response.Content.ReadAsStringAsync();
+// Parse and use balance
+```
+
+### See Also
+- [API_REFERENCE.md](API_REFERENCE.md#gdiservice-endpoints)
+- [ARCHITECTURE.md](ARCHITECTURE.md) 

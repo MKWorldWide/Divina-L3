@@ -34,6 +34,13 @@ GameDin L3 is a revolutionary gaming blockchain built on Base L2 settlement laye
 - **Monitoring**: Grafana dashboards and Prometheus metrics
 - **CLI Tools**: Command-line interface for system management
 
+#### 5. **GDIService API**
+- **GDIService.ts**: Universal wallet, tier, and access API for all games, worlds, and apps on Divina Layer 3.
+- **GDITier.ts**: Tier logic and thresholds for access gating.
+- **mockData.json**: Dev/test wallet balances.
+- **API Endpoints:** `/gdi/balance/:address`, `/gdi/tier/:address`, `/gdi/can-access/:address/:requiredTier`
+- **See also:** [API_REFERENCE.md](API_REFERENCE.md#gdiservice-endpoints)
+
 ## 🚀 Key Features
 
 ### Performance
