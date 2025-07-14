@@ -34,6 +34,8 @@ import {
   validateImmutable,
 } from '../utils/immutable.js';
 
+import gdiRouter from './routes/gdi.route';
+
 // ============================================================================
 // TYPES AND INTERFACES
 // ============================================================================
@@ -565,6 +567,8 @@ export const createAPIGateway = (config: Partial<APIGatewayConfig> = {}): expres
   app.get('/health', healthCheckHandler);
   app.get('/collective/status', collectiveStatusHandler);
   app.get('/metrics', metricsHandler);
+  // GDIService API routes for wallet/tier/access
+  app.use('/gdi', gdiRouter); // Quantum-detailed: Mounts GDIService endpoints at /gdi/*
   
   // Default route
   app.get('/', (req: express.Request, res: express.Response) => {

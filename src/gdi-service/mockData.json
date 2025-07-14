@@ -1,0 +1,9 @@
+{
+  // Quantum-detailed: Mock wallet balances for GDIService development and testing.
+  // Key: Wallet address (string)
+  // Value: GDI token balance (number)
+  // Used for simulating balance/tier queries and access gating in dev environments.
+  "0xuser1": 1500,
+  "0xuser2": 420,
+  "0xuser3": 90
+} 
