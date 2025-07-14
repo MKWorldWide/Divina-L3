@@ -432,7 +432,7 @@ export class GamingEngine extends EventEmitter {
                         gameId: session.currentGame || '',
                         actionType: action.type,
                         playerId: playerId,
-                        timestamp: Date.now()
+                    timestamp: Date.now()
                     }
                 });
                 

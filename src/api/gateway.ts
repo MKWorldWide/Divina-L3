@@ -120,7 +120,7 @@ const DEFAULT_CONFIG: APIGatewayConfig = createImmutableObject({
     'https://app.gamedin.io'
   ]),
   rateLimit: createImmutableObject({
-    windowMs: 15 * 60 * 1000, // 15 minutes
+      windowMs: 15 * 60 * 1000, // 15 minutes
     maxRequests: 100
   }),
   timeout: 30000, // 30 seconds
@@ -328,7 +328,7 @@ const trackEmergentBehavior = (
         emergentBehaviors: newBehaviors
       });
     }
-  } catch (error) {
+        } catch (error) {
     console.error('Failed to track emergent behavior:', error);
   }
 };

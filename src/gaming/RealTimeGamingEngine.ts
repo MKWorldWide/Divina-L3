@@ -1294,9 +1294,9 @@ export class RealTimeGamingEngine extends EventEmitter {
         room.players.add(playerId);
         room.lastActivity = Date.now();
         
-                    // Initialize player state
-            const playerState: GamingTypes.PlayerState = {
-                id: playerId,
+        // Initialize player state
+        const playerState: GamingTypes.PlayerState = {
+            id: playerId,
                 currentGameId: gameId,
                 stake: 0,
                 score: 0,
@@ -1308,13 +1308,13 @@ export class RealTimeGamingEngine extends EventEmitter {
                 aiAnalytics: null,
                 inventory: [],
                 abilities: [],
-                position: { x: 0, y: 0 },
-                health: 100,
+            position: { x: 0, y: 0 },
+            health: 100,
                 energy: 100,
                 status: 'active',
                 energy: 100,
                 status: 'active'
-            };
+        };
         
         room.gameState.players.set(playerId, playerState);
         
