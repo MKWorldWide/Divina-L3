@@ -648,7 +648,10 @@ export interface Metrics {
 
 // ============ ENUM TYPES ============
 
-export enum GamePhase {
+// Remove 'export' from enums and consts for CommonJS compatibility
+
+// GamePhase enum
+enum GamePhase {
     LOBBY = 'lobby',
     COUNTDOWN = 'countdown',
     PLAYING = 'playing',
@@ -656,21 +659,24 @@ export enum GamePhase {
     FINISHED = 'finished'
 }
 
-export enum PlayerRole {
+// PlayerRole enum
+enum PlayerRole {
     PLAYER = 'player',
     SPECTATOR = 'spectator',
     MODERATOR = 'moderator',
     ADMIN = 'admin'
 }
 
-export enum AIConfidence {
+// AIConfidence enum
+enum AIConfidence {
     LOW = 'low',
     MEDIUM = 'medium',
     HIGH = 'high',
     VERY_HIGH = 'very_high'
 }
 
-export enum FraudLevel {
+// FraudLevel enum
+enum FraudLevel {
     NONE = 'none',
     LOW = 'low',
     MEDIUM = 'medium',
@@ -688,7 +694,8 @@ export type DeepPartial<T> = {
 
 // ============ CONSTANTS ============
 
-export const GAME_CONSTANTS = {
+// GAME_CONSTANTS
+const GAME_CONSTANTS = {
     MAX_PLAYERS_PER_GAME: 100,
     MIN_STAKE: 0.001,
     MAX_STAKE: 1000,
@@ -700,19 +707,32 @@ export const GAME_CONSTANTS = {
     MAX_CHAT_LENGTH: 200,
     MAX_INVENTORY_SIZE: 50,
     MAX_ABILITIES: 10
-} as const;
+};
 
-export const AI_CONSTANTS = {
+// AI_CONSTANTS
+const AI_CONSTANTS = {
     MIN_CONFIDENCE: 70,
     MAX_RETRY_ATTEMPTS: 3,
     TIMEOUT: 10000,
     BATCH_SIZE: 100,
     MODEL_VERSION: '1.0.0'
-} as const;
+};
 
-export const BLOCKCHAIN_CONSTANTS = {
+// BLOCKCHAIN_CONSTANTS
+const BLOCKCHAIN_CONSTANTS = {
     GAS_LIMIT: 3000000,
     GAS_PRICE: 20000000000, // 20 gwei
     CONFIRMATION_BLOCKS: 12,
     MAX_RETRIES: 5
-} as const; 
+};
+
+// Export for CommonJS
+module.exports = {
+    GamePhase,
+    PlayerRole,
+    AIConfidence,
+    FraudLevel,
+    GAME_CONSTANTS,
+    AI_CONSTANTS,
+    BLOCKCHAIN_CONSTANTS
+}; 
