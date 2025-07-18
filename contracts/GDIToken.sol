@@ -501,6 +501,15 @@ contract GDIToken is ERC20, ERC20Burnable, ERC20Pausable, AccessControl, Reentra
         _unpause();
     }
 
+    /**
+     * @dev Mint tokens to an address (MINTER_ROLE only)
+     * @param to Recipient address
+     * @param amount Amount to mint
+     */
+    function mint(address to, uint256 amount) external onlyRole(MINTER_ROLE) {
+        _mint(to, amount);
+    }
+
     // ============ OVERRIDE FUNCTIONS ============
     
     /**
