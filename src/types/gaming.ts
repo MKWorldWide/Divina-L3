@@ -7,8 +7,6 @@
 // ============ GAME TYPES ============
 
 export type GameType = 'battle_royale' | 'tournament' | 'challenge' | 'custom' | 'pvp' | 'cooperative';
-export type GameState = 'waiting' | 'active' | 'finished' | 'cancelled' | 'paused';
-export type GameAction = 'move' | 'attack' | 'defend' | 'collect' | 'use_item' | 'special_ability';
 
 // ============ PLAYER TYPES ============
 
@@ -683,7 +681,7 @@ export enum FraudLevel {
 // ============ UTILITY TYPES ============
 
 export type Optional<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;
-export type Required<T, K extends keyof T> = T & Required<Pick<T, K>>;
+// export type Required<T, K extends keyof T> = T & Required<Pick<T, K>>; // This line is commented out to avoid circular dependency
 export type DeepPartial<T> = {
     [P in keyof T]?: T[P] extends object ? DeepPartial<T[P]> : T[P];
 };
