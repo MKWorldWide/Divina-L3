@@ -74,7 +74,7 @@ const StatsCard: React.FC<StatsCardProps> = ({
             <Chip
               label={trendValue}
               size="small"
-              icon={getTrendIcon()}
+              icon={getTrendIcon() || undefined}
               sx={{
                 color: getTrendColor(),
                 backgroundColor: `${getTrendColor()}20`,

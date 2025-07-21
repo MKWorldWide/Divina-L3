@@ -1,7 +1,7 @@
 import React, { FC, useState, useEffect } from 'react';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { useConnection } from '@solana/wallet-adapter-react';
-import { LAMPORTS_PER_SOL, PublicKey } from '@solana/web3.js';
+import { LAMPORTS_PER_SOL, PublicKey, Transaction, SystemProgram } from '@solana/web3.js';
 import {
   Box,
   Card,
@@ -97,12 +97,15 @@ export const PhantomWalletTest: FC = () => {
 
     try {
       // Create a simple transfer transaction
-      const transaction = {
-        recentBlockhash: '11111111111111111111111111111111',
-        instructions: [],
-        feePayer: publicKey
-      };
-      
+      const transaction = new Transaction().add(
+        SystemProgram.transfer({
+          fromPubkey: publicKey!,
+          toPubkey: publicKey!, // for test, send to self
+          lamports: 1,
+        })
+      );
+      transaction.recentBlockhash = '11111111111111111111111111111111';
+      transaction.feePayer = publicKey!;
       const signedTx = await signTransaction(transaction);
       addTestResult('Transaction Signing', 'success', 'Transaction signed successfully');
     } catch (error) {

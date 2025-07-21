@@ -3,6 +3,7 @@ import { useWallet } from '@solana/wallet-adapter-react';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import { Button, Box, Typography, Chip } from '@mui/material';
 import { AccountBalanceWallet, CheckCircle, Error } from '@mui/icons-material';
+import { WalletName } from '@solana/wallet-adapter-base';
 
 interface PhantomWalletButtonProps {
   onConnect?: (publicKey: string) => void;
@@ -17,7 +18,7 @@ export const PhantomWalletButton: FC<PhantomWalletButtonProps> = ({
 
   const handleConnect = useCallback(async () => {
     try {
-      await select('phantom');
+      await select('phantom' as WalletName);
       if (publicKey && onConnect) {
         onConnect(publicKey.toString());
       }

@@ -1,0 +1,23 @@
+version: 1
+frontend:
+  phases:
+    preBuild:
+      commands:
+        - echo "Installing Node.js dependencies..."
+        - npm install
+        - cd gdi-dapp
+        - npm install
+    build:
+      commands:
+        - echo "Building GameDin L3 React application..."
+        - cd gdi-dapp
+        - npm run build
+  artifacts:
+    baseDirectory: gdi-dapp/build
+    files:
+      - '**/*'
+  cache:
+    paths:
+      - node_modules/**/*
+      - gdi-dapp/node_modules/**/*
+      - gdi-dapp/.next/cache/**/* 

@@ -1,0 +1,22 @@
+{
+  "providers": {
+    "awscloudformation": {
+      "AuthRoleName": "amplify-divinal3-dev-8e8f5-authRole",
+      "UnauthRoleArn": "arn:aws:iam::869935067006:role/amplify-divinal3-dev-8e8f5-unauthRole",
+      "AuthRoleArn": "arn:aws:iam::869935067006:role/amplify-divinal3-dev-8e8f5-authRole",
+      "Region": "us-east-1",
+      "DeploymentBucketName": "amplify-divinal3-dev-8e8f5-deployment",
+      "UnauthRoleName": "amplify-divinal3-dev-8e8f5-unauthRole",
+      "StackName": "amplify-divinal3-dev-8e8f5",
+      "StackId": "arn:aws:cloudformation:us-east-1:869935067006:stack/amplify-divinal3-dev-8e8f5/f6cf1150-652b-11f0-b917-125321cc3d37",
+      "AmplifyAppId": "dc1r3880dg8pg"
+    }
+  },
+  "hosting": {
+    "amplifyhosting": {
+      "service": "amplifyhosting",
+      "type": "cicd",
+      "lastPushTimeStamp": "2025-07-21T01:31:08.591Z"
+    }
+  }
+}
