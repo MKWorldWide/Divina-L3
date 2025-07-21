@@ -5,7 +5,7 @@
  * @dev Supports multiple networks and provides real-time blockchain data
  */
 
-import { ethers, Contract, Wallet, providers } from 'ethers';
+import { ethers, Contract, Wallet } from 'ethers';
 import type { 
     GameResult, 
     BlockchainTransaction, 
@@ -73,7 +73,7 @@ export class BlockchainService {
     private config: BlockchainConfig;
     private logger: Logger;
     private database: DatabaseService;
-    private providers: Map<string, providers.Provider> = new Map();
+    private providers: Map<string, ethers.JsonRpcProvider> = new Map();
     private wallets: Map<string, Wallet> = new Map();
     private contracts: Map<string, Contract> = new Map();
     private isInitialized: boolean = false;
@@ -138,12 +138,12 @@ export class BlockchainService {
     private async initializeProviders(): Promise<void> {
         for (const [networkId, networkConfig] of Object.entries(this.config.networks)) {
             try {
-                let provider: providers.Provider;
+                let provider: ethers.JsonRpcProvider;
                 
                 if (networkConfig.rpcUrl.startsWith('ws')) {
-                    provider = new providers.WebSocketProvider(networkConfig.rpcUrl);
+                    provider = new ethers.WebSocketProvider(networkConfig.rpcUrl);
                 } else {
-                    provider = new providers.JsonRpcProvider(networkConfig.rpcUrl);
+                    provider = new ethers.JsonRpcProvider(networkConfig.rpcUrl);
                 }
                 
                 // Test connection
@@ -917,7 +917,7 @@ export class BlockchainService {
             
             // Close all providers
             for (const provider of this.providers.values()) {
-                if (provider instanceof providers.WebSocketProvider) {
+                if (provider instanceof ethers.WebSocketProvider) {
                     provider.destroy();
                 }
             }

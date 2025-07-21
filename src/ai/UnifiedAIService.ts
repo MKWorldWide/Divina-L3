@@ -891,4 +891,7 @@ export class UnifiedAIService {
             hitRate: this.metrics.cacheHitRate
         };
     }
-} 
+}
+
+export { UnifiedAIService };
+export default UnifiedAIService; 

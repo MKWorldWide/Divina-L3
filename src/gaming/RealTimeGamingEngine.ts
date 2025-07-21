@@ -13,7 +13,7 @@ import { v4 as uuidv4 } from 'uuid';
 import type * as GamingTypes from '../types/gaming.mts';
 import { NovaSanctumAI } from '../ai/NovaSanctumAI';
 import { AthenaMistAI } from '../ai/AthenaMistAI';
-import { UnifiedAIService } from '../ai/UnifiedAIService';
+import UnifiedAIService from '../ai/UnifiedAIService.js';
 import { DatabaseService } from '../database/DatabaseService';
 import { BlockchainService } from '../blockchain/BlockchainService';
 import { ethers } from 'ethers';
@@ -261,15 +261,15 @@ export class RealTimeGamingEngine extends EventEmitter {
             
             switch (type) {
                 case 'join_game':
-                    await this.handleJoinGame(playerId, payload);
+                    await this.handleJoinGame(playerId, payload.gameId, payload.gameType);
                     break;
                     
                 case 'game_action':
-                    await this.handleGameAction(playerId, payload);
+                    await this.handleGameAction(playerId, message);
                     break;
                     
                 case 'leave_game':
-                    await this.handleLeaveGame(playerId, payload);
+                    await this.handleLeaveGame(playerId, payload.gameId);
                     break;
                     
                 case 'chat_message':
@@ -301,8 +301,8 @@ export class RealTimeGamingEngine extends EventEmitter {
      * @method handleJoinGame
      * @description Handle player joining a game
      */
-    private async handleJoinGame(playerId: string, payload: GamingTypes.JoinGamePayload): Promise<void> {
-        const { gameId, stake, gameType } = payload;
+    private async handleJoinGame(playerId: string, gameId: string, gameType: string): Promise<void> {
+        const { stake, gameType } = payload;
         
         try {
             // Check if player is already in a game
@@ -402,8 +402,8 @@ export class RealTimeGamingEngine extends EventEmitter {
      * @method handleGameAction
      * @description Handle player game action
      */
-    private async handleGameAction(playerId: string, payload: GamingTypes.GameActionPayload): Promise<void> {
-        const { gameId, action, data } = payload;
+    private async handleGameAction(playerId: string, message: any): Promise<void> {
+        const { gameId, actionType, data } = message;
         
         try {
             const game = this.games.get(gameId);
@@ -427,7 +427,7 @@ export class RealTimeGamingEngine extends EventEmitter {
             }
             
             // Validate action
-            if (!this.isValidAction(action, data)) {
+            if (!this.isValidAction(actionType, data)) {
                 this.sendToPlayer(playerId, {
                     type: 'error',
                     message: 'Invalid action',
@@ -437,18 +437,30 @@ export class RealTimeGamingEngine extends EventEmitter {
             }
             
             // Process action
-            const result = await this.processGameAction(gameId, playerId, action, data);
+            const room = this.gameRooms.get(gameId);
+            if (room) {
+                const gameAction: GamingTypes.IGameAction = {
+                    type: actionType,
+                    playerId,
+                    gameId,
+                    timestamp: Date.now(),
+                    data,
+                    success: true,
+                    result: { success: true, score: 0, effects: [], message: '', metadata: {} }
+                };
+                await this.processGameAction(room, gameAction);
+            }
             
             // Update player state
             player.lastActionTime = Date.now();
-            player.score += result.score;
+            player.score += gameAction.result.score;
             
             // Broadcast action to all players
             this.broadcastToGame(gameId, {
                 type: 'game_action',
                 playerId,
                 action,
-                score: result.score,
+                score: gameAction.result.score,
                 totalScore: player.score,
                 timestamp: Date.now()
             });
@@ -472,46 +484,42 @@ export class RealTimeGamingEngine extends EventEmitter {
      * @method handleLeaveGame
      * @description Handle player leaving a game
      */
-    private async handleLeaveGame(playerId: string, payload: GamingTypes.LeaveGamePayload): Promise<void> {
-        const { gameId } = payload;
-        
-        try {
-            const game = this.games.get(gameId);
-            if (!game) {
-                return;
-            }
-            
-            const playerIndex = game.players.findIndex(p => p.id === playerId);
-            if (playerIndex === -1) {
-                return;
-            }
-            
-            // Remove player from game
-            game.players.splice(playerIndex, 1);
-            
-            // Update player state
-            const player = this.players.get(playerId);
-            if (player) {
-                player.currentGameId = null;
-                player.isActive = false;
-            }
-            
-            // Update metrics
-            this.metrics.activePlayers--;
-            
-            // Notify other players
-            this.broadcastToGame(gameId, {
-                type: 'player_left',
-                playerId,
-                playerCount: game.players.length,
-                timestamp: Date.now()
-            }, playerId);
-            
-            this.logger.info(`Player ${playerId} left game ${gameId}`);
-            
-        } catch (error) {
-            this.logger.error(`Error leaving game for player ${playerId}:`, error);
+    private async handleLeaveGame(playerId: string, gameId: string): Promise<void> {
+        const game = this.games.get(gameId);
+        if (!game) {
+            return;
         }
+        
+        const playerIndex = game.players.findIndex(p => p.id === playerId);
+        if (playerIndex === -1) {
+            return;
+        }
+        
+        // Remove player from game
+        game.players.splice(playerIndex, 1);
+        
+        // Update player state
+        const player = this.players.get(playerId);
+        if (player) {
+            player.currentGameId = null;
+            player.isActive = false;
+        }
+        
+        // Update metrics
+        this.metrics.activePlayers--;
+        
+        // Notify other players
+        this.broadcastToGame(gameId, {
+            type: 'player_left',
+            playerId,
+            playerCount: game.players.length,
+            timestamp: Date.now()
+        }, playerId);
+        
+        this.logger.info(`Player ${playerId} left game ${gameId}`);
+        
+    } catch (error) {
+        this.logger.error(`Error leaving game for player ${playerId}:`, error);
     }
 
     /**
@@ -661,7 +669,7 @@ export class RealTimeGamingEngine extends EventEmitter {
             // Handle player leaving current game
             const player = this.players.get(playerId);
             if (player && player.currentGameId) {
-                await this.handleLeaveGame(playerId, { gameId: player.currentGameId });
+                await this.handleLeaveGame(playerId, player.currentGameId);
             }
             
             // Remove player state
@@ -778,50 +786,7 @@ export class RealTimeGamingEngine extends EventEmitter {
     }
 
     /**
-     * @method processGameAction
-     * @description Process a game action and return results
-     */
-    private async processGameAction(
-        gameId: string, 
-        playerId: string, 
-        action: string, 
-        data: any
-    ): Promise<{ score: number; success: boolean }> {
-        // Basic action processing - can be extended for specific game types
-        let score = 0;
-        let success = true;
-        
-        switch (action) {
-            case 'move':
-                score = this.calculateMoveScore(data);
-                break;
-                
-            case 'attack':
-                score = this.calculateAttackScore(data);
-                break;
-                
-            case 'defend':
-                score = this.calculateDefendScore(data);
-                break;
-                
-            case 'collect':
-                score = this.calculateCollectScore(data);
-                break;
-                
-            default:
-                success = false;
-                score = 0;
-        }
-        
-        // Add randomness to prevent predictable patterns
-        score += Math.floor(Math.random() * 10);
-        
-        return { score, success };
-    }
-
-    /**
-     * @method performAIAnalysis
-     * @description Perform AI analysis on player
+    
      */
     private async performAIAnalysis(
         playerId: string, 
@@ -1187,7 +1152,7 @@ export class RealTimeGamingEngine extends EventEmitter {
                 await this.handleGameMessage(playerId, message);
             } catch (error) {
                 this.logger.error('Error handling game message:', error);
-                this.sendError(ws, 'Invalid message format');
+                this.sendError(this.playerConnections.get(playerId), 'Invalid message format');
             }
         });
 
@@ -1362,14 +1327,10 @@ export class RealTimeGamingEngine extends EventEmitter {
             type: actionType,
             playerId: playerId,
             gameId: gameId,
-            data: data,
             timestamp: Date.now(),
+            data: data,
             success: true,
-                            result: {
-                    score: 0,
-                    duration: 0,
-                    completedAt: Date.now()
-                }
+            result: { success: true, score: 0, effects: [], message: '', metadata: {} }
         };
         
         // Update game state based on action

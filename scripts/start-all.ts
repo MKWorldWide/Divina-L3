@@ -1,5 +1,5 @@
 // Quantum-detailed ESM migration for start-all
-import { fileURLToPath } from 'url';
+import { fileURLToPath, pathToFileURL } from 'url';
 import path from 'path';
 import { spawn, ChildProcess } from "child_process";
 import { promisify } from "util";
@@ -138,6 +138,6 @@ async function main(): Promise<void> {
   }
 }
 
-if (import.meta.url === path.toFileURL(process.argv[1]).href) {
+if (import.meta.url === pathToFileURL(process.argv[1]).href) {
   main().catch(console.error);
 } 
