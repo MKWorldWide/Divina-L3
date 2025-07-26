@@ -1,13 +1,5 @@
 import React from 'react';
-import {
-  Card,
-  CardContent,
-  Box,
-  Typography,
-  Chip,
-  LinearProgress,
-  useTheme,
-} from '@mui/material';
+import { Card, CardContent, Box, Typography, Chip, LinearProgress, useTheme } from '@mui/material';
 import {
   Psychology,
   TrendingUp,
@@ -26,7 +18,7 @@ interface AIInsight {
   impact: 'positive' | 'negative' | 'neutral';
   priority: 'low' | 'medium' | 'high';
   timestamp: Date;
-  data?: any;
+  data?: Record<string, unknown>; // Generic object type for flexible data
 }
 
 interface AIInsightCardProps {
@@ -164,11 +156,7 @@ const AIInsightCard: React.FC<AIInsightCardProps> = ({ insight }) => {
           {insight.title}
         </Typography>
 
-        <Typography
-          variant="body2"
-          color="text.secondary"
-          sx={{ mb: 2, lineHeight: 1.5 }}
-        >
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 2, lineHeight: 1.5 }}>
           {insight.description}
         </Typography>
 
@@ -209,7 +197,7 @@ const AIInsightCard: React.FC<AIInsightCardProps> = ({ insight }) => {
               textTransform: 'capitalize',
             }}
           />
-          
+
           <Chip
             label={insight.type.replace('-', ' ')}
             size="small"
@@ -238,4 +226,4 @@ const AIInsightCard: React.FC<AIInsightCardProps> = ({ insight }) => {
   );
 };
 
-export default AIInsightCard; 
+export default AIInsightCard;

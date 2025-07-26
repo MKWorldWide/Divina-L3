@@ -1,12 +1,5 @@
-import {
-  Connection,
-  PublicKey,
-} from '@solana/web3.js';
-import {
-  getAssociatedTokenAddress,
-  getAccount,
-  transfer,
-} from '@solana/spl-token';
+import { Connection, PublicKey } from '@solana/web3.js';
+import { getAssociatedTokenAddress, getAccount, transfer } from '@solana/spl-token';
 
 const GDI_MINT = new PublicKey('4VzHLByG3TmvDtTE9wBQomoE1kuYRVqe7hLpCU2d4LwS');
 const connection = new Connection('https://api.testnet.solana.com', 'confirmed');
@@ -26,4 +19,4 @@ export async function getGdiBalance(wallet: PublicKey) {
 export async function sendGdi(recipient: string, amount: number) {
   // ⚠️ You'd use Solana CLI signing off-chain for security or load `id.json` manually
   console.warn('Signing must be done securely via CLI/off-chain for now');
-} 
+}

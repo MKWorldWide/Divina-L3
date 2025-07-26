@@ -32,7 +32,7 @@ const Header: React.FC = () => {
   const { account, connect, disconnect, balance, isConnected } = useWallet();
   const { activeGames, notifications } = useGame();
   const { aiStatus } = useAI();
-  
+
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [notificationAnchor, setNotificationAnchor] = useState<null | HTMLElement>(null);
 
@@ -66,9 +66,9 @@ const Header: React.FC = () => {
   };
 
   return (
-    <AppBar 
-      position="fixed" 
-      sx={{ 
+    <AppBar
+      position="fixed"
+      sx={{
         zIndex: theme.zIndex.drawer + 1,
         background: 'linear-gradient(90deg, #1a1a2e 0%, #16213e 100%)',
         borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
@@ -86,12 +86,7 @@ const Header: React.FC = () => {
           <Typography variant="h6" component="div" sx={{ fontWeight: 700 }}>
             GameDin L3
           </Typography>
-          <Chip 
-            label="AI-Powered Gaming" 
-            size="small" 
-            color="secondary"
-            sx={{ ml: 2 }}
-          />
+          <Chip label="AI-Powered Gaming" size="small" color="secondary" sx={{ ml: 2 }} />
         </Box>
 
         {/* AI Status Indicator */}
@@ -117,11 +112,7 @@ const Header: React.FC = () => {
         )}
 
         {/* Notifications */}
-        <IconButton
-          color="inherit"
-          onClick={handleNotificationMenuOpen}
-          sx={{ mr: 1 }}
-        >
+        <IconButton color="inherit" onClick={handleNotificationMenuOpen} sx={{ mr: 1 }}>
           <Badge badgeContent={notifications.length} color="error">
             <Notifications />
           </Badge>
@@ -144,18 +135,10 @@ const Header: React.FC = () => {
         ) : (
           <Box display="flex" alignItems="center" gap={1}>
             {/* Balance Display */}
-            <Chip
-              label={formatBalance(balance)}
-              color="primary"
-              variant="outlined"
-              size="small"
-            />
-            
+            <Chip label={formatBalance(balance)} color="primary" variant="outlined" size="small" />
+
             {/* User Avatar and Menu */}
-            <IconButton
-              onClick={handleProfileMenuOpen}
-              sx={{ ml: 1 }}
-            >
+            <IconButton onClick={handleProfileMenuOpen} sx={{ ml: 1 }}>
               <Avatar sx={{ width: 32, height: 32, bgcolor: theme.palette.primary.main }}>
                 <Person />
               </Avatar>
@@ -174,7 +157,7 @@ const Header: React.FC = () => {
               border: '1px solid rgba(255, 255, 255, 0.1)',
               borderRadius: 2,
               mt: 1,
-            }
+            },
           }}
         >
           <MenuItem onClick={handleMenuClose}>
@@ -207,7 +190,7 @@ const Header: React.FC = () => {
               borderRadius: 2,
               mt: 1,
               minWidth: 300,
-            }
+            },
           }}
         >
           {notifications.length === 0 ? (
@@ -236,4 +219,4 @@ const Header: React.FC = () => {
   );
 };
 
-export default Header; 
+export default Header;

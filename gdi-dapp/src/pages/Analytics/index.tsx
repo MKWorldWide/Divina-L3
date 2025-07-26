@@ -7,9 +7,7 @@ const Analytics: React.FC = () => {
       <Typography variant="h4" gutterBottom>
         Analytics
       </Typography>
-      <Typography>
-        Analytics content will be displayed here.
-      </Typography>
+      <Typography>Analytics content will be displayed here.</Typography>
     </Box>
   );
 };

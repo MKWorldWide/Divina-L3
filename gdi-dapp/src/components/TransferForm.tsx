@@ -15,25 +15,27 @@ export default function TransferForm() {
     e.preventDefault();
     if (!publicKey) return alert('Connect your wallet first!');
     if (!to || !amount) return alert('Please fill in all fields!');
-    
+
     setLoading(true);
     try {
       const recipient = new PublicKey(to);
       const fromAta = await getAssociatedTokenAddress(GDI_MINT, publicKey);
       const toAta = await getAssociatedTokenAddress(GDI_MINT, recipient);
-      
+
       const ix = createTransferInstruction(
         fromAta,
         toAta,
         publicKey,
         amount * 1e9 // GDI uses 9 decimals
       );
-      
+
       const tx = new Transaction().add(ix);
       const sig = await sendTransaction(tx, connection);
-      
-      alert(`✅ Sent ${amount} GDI to ${to}\nTransaction: https://solscan.io/tx/${sig}?cluster=testnet`);
-      
+
+      alert(
+        `✅ Sent ${amount} GDI to ${to}\nTransaction: https://solscan.io/tx/${sig}?cluster=testnet`
+      );
+
       // Clear form
       setTo('');
       setAmount(0);
@@ -62,8 +64,8 @@ export default function TransferForm() {
         placeholder="Amount GDI"
         disabled={loading}
       />
-      <button 
-        type="submit" 
+      <button
+        type="submit"
         className="bg-green-600 hover:bg-green-700 px-6 py-2 rounded font-semibold w-full disabled:opacity-50"
         disabled={loading || !publicKey}
       >
@@ -71,4 +73,4 @@ export default function TransferForm() {
       </button>
     </form>
   );
-} 
+}

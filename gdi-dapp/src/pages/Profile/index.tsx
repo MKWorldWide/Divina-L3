@@ -7,9 +7,7 @@ const Profile: React.FC = () => {
       <Typography variant="h4" gutterBottom>
         User Profile
       </Typography>
-      <Typography>
-        User profile content will be displayed here.
-      </Typography>
+      <Typography>User profile content will be displayed here.</Typography>
     </Box>
   );
 };

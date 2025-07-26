@@ -1,11 +1,5 @@
 import React from 'react';
-import {
-  Card,
-  CardContent,
-  Box,
-  Typography,
-  useTheme,
-} from '@mui/material';
+import { Card, CardContent, Box, Typography, useTheme } from '@mui/material';
 
 interface QuickActionCardProps {
   title: string;
@@ -53,7 +47,7 @@ const QuickActionCard: React.FC<QuickActionCardProps> = ({
         >
           {icon}
         </Box>
-        
+
         <Typography
           variant="h6"
           sx={{
@@ -64,12 +58,8 @@ const QuickActionCard: React.FC<QuickActionCardProps> = ({
         >
           {title}
         </Typography>
-        
-        <Typography
-          variant="body2"
-          color="text.secondary"
-          sx={{ lineHeight: 1.5 }}
-        >
+
+        <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 1.5 }}>
           {description}
         </Typography>
       </CardContent>
@@ -77,4 +67,4 @@ const QuickActionCard: React.FC<QuickActionCardProps> = ({
   );
 };
 
-export default QuickActionCard; 
+export default QuickActionCard;

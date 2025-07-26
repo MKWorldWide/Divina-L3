@@ -1,11 +1,17 @@
 // Blockchain Service for handling blockchain-related functionality
 import { ethers } from 'ethers';
 
-export const initializeBlockchainService = (provider: any) => {
+type Provider = ethers.providers.Provider | ethers.Signer;
+
+interface BlockchainService {
+  getBalance: (address: string) => Promise<string>;
+  // Add more method signatures as needed
+}
+
+export const initializeBlockchainService = (provider: Provider): BlockchainService => {
   console.log('Blockchain service initialized');
   return {
-    // Add blockchain service methods here
-    getBalance: async (address: string) => {
+    getBalance: async (address: string): Promise<string> => {
       // Mock implementation
       return '1.5 ETH';
     },
@@ -13,9 +19,14 @@ export const initializeBlockchainService = (provider: any) => {
   };
 };
 
+interface TokenBalanceResponse {
+  success: boolean;
+  balance: string;
+  tokenSymbol: string;
+}
+
 export const blockchainService = {
-  // Add blockchain service methods here
-  getTokenBalance: async (tokenAddress: string, userAddress: string) => {
+  getTokenBalance: async (tokenAddress: string, userAddress: string): Promise<string> => {
     // Mock implementation
     return '1000 GDI';
   },

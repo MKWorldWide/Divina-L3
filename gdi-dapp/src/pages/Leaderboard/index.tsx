@@ -7,9 +7,7 @@ const Leaderboard: React.FC = () => {
       <Typography variant="h4" gutterBottom>
         Leaderboard
       </Typography>
-      <Typography>
-        Leaderboard content will be displayed here.
-      </Typography>
+      <Typography>Leaderboard content will be displayed here.</Typography>
     </Box>
   );
 };

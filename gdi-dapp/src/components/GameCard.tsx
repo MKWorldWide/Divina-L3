@@ -26,15 +26,28 @@ interface Game {
   name: string;
   type: 'casino' | 'esports' | 'puzzle' | 'tournament';
   status: 'waiting' | 'active' | 'finished' | 'cancelled';
-  players: any[];
+  players: Array<{
+    id: string;
+    name: string;
+    avatar?: string;
+    betAmount?: number;
+  }>;
   maxPlayers: number;
   minBet: number;
   maxBet: number;
   currentBet: number;
   startTime: Date;
   endTime?: Date;
-  winner?: any;
-  aiAnalysis?: any;
+  winner?: {
+    id: string;
+    name: string;
+    prize?: number;
+  };
+  aiAnalysis?: {
+    confidence: number;
+    prediction?: string;
+    recommendations?: string[];
+  };
 }
 
 interface GameCardProps {
@@ -151,12 +164,7 @@ const GameCard: React.FC<GameCardProps> = ({ game }) => {
               />
             </Box>
           </Box>
-          <Chip
-            label={getStatusText()}
-            color={getStatusColor()}
-            size="small"
-            variant="outlined"
-          />
+          <Chip label={getStatusText()} color={getStatusColor()} size="small" variant="outlined" />
         </Box>
 
         {/* Game Info */}
@@ -169,7 +177,7 @@ const GameCard: React.FC<GameCardProps> = ({ game }) => {
               <AvatarGroup max={3} sx={{ '& .MuiAvatar-root': { width: 24, height: 24 } }}>
                 {game.players.map((player, index) => (
                   <Avatar key={index} sx={{ width: 24, height: 24, fontSize: '0.75rem' }}>
-                    {player.username?.charAt(0) || 'P'}
+                    {player.name?.charAt(0) || 'P'}
                   </Avatar>
                 ))}
               </AvatarGroup>
@@ -227,13 +235,17 @@ const GameCard: React.FC<GameCardProps> = ({ game }) => {
             fontWeight: 600,
           }}
         >
-          {game.status === 'waiting' ? 'Join Game' : 
-           game.status === 'active' ? 'Continue' : 
-           game.status === 'finished' ? 'View Results' : 'Game Ended'}
+          {game.status === 'waiting'
+            ? 'Join Game'
+            : game.status === 'active'
+              ? 'Continue'
+              : game.status === 'finished'
+                ? 'View Results'
+                : 'Game Ended'}
         </Button>
       </CardContent>
     </Card>
   );
 };
 
-export default GameCard; 
+export default GameCard;

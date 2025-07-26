@@ -7,9 +7,7 @@ const Bridge: React.FC = () => {
       <Typography variant="h4" gutterBottom>
         Bridge
       </Typography>
-      <Typography>
-        Bridge content will be displayed here.
-      </Typography>
+      <Typography>Bridge content will be displayed here.</Typography>
     </Box>
   );
 };

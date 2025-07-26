@@ -1,10 +1,20 @@
 // AI Service for handling AI-related functionality
 
+interface GameData {
+  // Define the structure of game data
+  [key: string]: unknown;
+}
+
+interface AnalysisResult {
+  success: boolean;
+  analysis: string;
+  [key: string]: unknown;
+}
+
 export const initializeAIServices = () => {
   console.log('AI services initialized');
   return {
-    // Add AI service methods here
-    analyzeGameData: async (data: any) => {
+    analyzeGameData: async (data: GameData): Promise<AnalysisResult> => {
       // Mock implementation
       return { success: true, analysis: 'Analysis result' };
     },
@@ -12,9 +22,14 @@ export const initializeAIServices = () => {
   };
 };
 
+interface BehaviorAnalysis {
+  success: boolean;
+  behavior: string;
+  [key: string]: unknown;
+}
+
 export const aiService = {
-  // Add AI service methods here
-  analyzePlayerBehavior: async (playerId: string) => {
+  analyzePlayerBehavior: async (playerId: string): Promise<BehaviorAnalysis> => {
     // Mock implementation
     return { success: true, behavior: 'Player behavior analysis' };
   },

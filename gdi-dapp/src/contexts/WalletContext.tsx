@@ -1,4 +1,11 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  ReactNode,
+  useCallback,
+} from 'react';
 import { initializeConnector, useWeb3React } from '@web3-react/core';
 import { MetaMask } from '@web3-react/metamask';
 import { WalletConnect } from '@web3-react/walletconnect';
@@ -31,23 +38,19 @@ interface WalletProviderProps {
 }
 
 // Initialize connectors with proper types
-const [metaMask] = initializeConnector<MetaMask>(
-  (actions) => new MetaMask({ actions })
-);
+const [metaMask] = initializeConnector<MetaMask>(actions => new MetaMask({ actions }));
 
-const [walletConnect] = initializeConnector<WalletConnect>(
-  (actions) => {
-    const options: WalletConnectOptions = {
-      rpc: {
-        1: process.env.REACT_APP_ETHEREUM_RPC_URL || 'https://mainnet.infura.io/v3/your-project-id',
-        56: 'https://bsc-dataseed.binance.org/',
-        137: 'https://polygon-rpc.com/',
-      },
-      qrcode: true,
-    };
-    return new WalletConnect(actions, options);
-  }
-);
+const [walletConnect] = initializeConnector<WalletConnect>(actions => {
+  const options: WalletConnectOptions = {
+    rpc: {
+      1: process.env.REACT_APP_ETHEREUM_RPC_URL || 'https://mainnet.infura.io/v3/your-project-id',
+      56: 'https://bsc-dataseed.binance.org/',
+      137: 'https://polygon-rpc.com/',
+    },
+    qrcode: true,
+  };
+  return new WalletConnect(actions, options);
+});
 
 // Context
 const WalletContext = createContext<WalletContextType | undefined>(undefined);
@@ -62,7 +65,11 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
   // Update provider when web3Provider changes
   useEffect(() => {
     if (web3Provider) {
-      const ethersProvider = new ethers.providers.Web3Provider(web3Provider as any);
+      // Use the correct type for the provider
+      // The provider from Web3React is compatible with the EIP-1193 standard
+      const ethersProvider = new ethers.providers.Web3Provider(
+        web3Provider as unknown as ethers.providers.ExternalProvider
+      );
       setProvider(ethersProvider);
     }
   }, [web3Provider]);
@@ -85,10 +92,10 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
     };
 
     updateBalance();
-    
+
     // Set up balance polling
     const interval = setInterval(updateBalance, 10000); // Update every 10 seconds
-    
+
     return () => clearInterval(interval);
   }, [account, provider]);
 
@@ -164,11 +171,7 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
     error,
   };
 
-  return (
-    <WalletContext.Provider value={value}>
-      {children}
-    </WalletContext.Provider>
-  );
+  return <WalletContext.Provider value={value}>{children}</WalletContext.Provider>;
 };
 
 // Hook
@@ -178,4 +181,4 @@ export const useWallet = (): WalletContextType => {
     throw new Error('useWallet must be used within a WalletProvider');
   }
   return context;
-}; 
+};

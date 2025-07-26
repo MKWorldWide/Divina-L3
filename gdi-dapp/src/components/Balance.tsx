@@ -17,4 +17,4 @@ export default function Balance() {
       GDI Balance: <span className="font-bold">{balance.toLocaleString()} GDI</span>
     </div>
   );
-} 
+}

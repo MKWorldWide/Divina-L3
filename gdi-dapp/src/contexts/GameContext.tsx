@@ -1,6 +1,32 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { io, Socket } from 'socket.io-client';
 
+// Game move types
+type CardGameMove = {
+  type: 'playCard' | 'drawCard' | 'fold' | 'call' | 'raise';
+  cardId?: string;
+  amount?: number;
+};
+
+type DiceGameMove = {
+  type: 'rollDice' | 'holdDice' | 'bankPoints';
+  diceIndices?: number[];
+};
+
+type BoardGameMove = {
+  type: 'placePiece' | 'movePiece' | 'capturePiece' | 'endTurn';
+  fromPosition?: { x: number; y: number };
+  toPosition?: { x: number; y: number };
+  pieceId?: string;
+};
+
+type SlotMachineMove = {
+  type: 'spin' | 'placeBet' | 'cashOut';
+  betAmount?: number;
+};
+
+type GameMove = CardGameMove | DiceGameMove | BoardGameMove | SlotMachineMove;
+
 // Types
 interface Game {
   id: string;
@@ -76,17 +102,17 @@ interface GameContextType {
   currentGame: Game | null;
   isLoading: boolean;
   error: string | null;
-  
+
   // Actions
   joinGame: (gameId: string, bet: number) => Promise<void>;
   leaveGame: (gameId: string) => Promise<void>;
-  makeMove: (gameId: string, move: any) => Promise<void>;
+  makeMove: (gameId: string, move: GameMove) => Promise<void>;
   placeBet: (gameId: string, amount: number) => Promise<void>;
   createGame: (gameConfig: Partial<Game>) => Promise<string>;
   getGameHistory: (playerId: string) => Promise<Game[]>;
   markNotificationRead: (notificationId: string) => void;
   clearNotifications: () => void;
-  
+
   // Real-time
   socket: Socket | null;
   isConnected: boolean;
@@ -139,16 +165,14 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
       setIsConnected(false);
     });
 
-    newSocket.on('error', (error) => {
+    newSocket.on('error', error => {
       console.error('Socket error:', error);
       setError('Connection error. Please refresh the page.');
     });
 
     // Game events
     newSocket.on('game:update', (game: Game) => {
-      setActiveGames(prev => 
-        prev.map(g => g.id === game.id ? game : g)
-      );
+      setActiveGames(prev => prev.map(g => (g.id === game.id ? game : g)));
       if (currentGame?.id === game.id) {
         setCurrentGame(game);
       }
@@ -177,19 +201,17 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
 
     // Player events
     newSocket.on('player:joined', (data: { gameId: string; player: Player }) => {
-      setActiveGames(prev => 
-        prev.map(game => 
-          game.id === data.gameId 
-            ? { ...game, players: [...game.players, data.player] }
-            : game
+      setActiveGames(prev =>
+        prev.map(game =>
+          game.id === data.gameId ? { ...game, players: [...game.players, data.player] } : game
         )
       );
     });
 
     newSocket.on('player:left', (data: { gameId: string; playerId: string }) => {
-      setActiveGames(prev => 
-        prev.map(game => 
-          game.id === data.gameId 
+      setActiveGames(prev =>
+        prev.map(game =>
+          game.id === data.gameId
             ? { ...game, players: game.players.filter(p => p.id !== data.playerId) }
             : game
         )
@@ -198,12 +220,8 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
 
     // AI events
     newSocket.on('ai:analysis', (data: { gameId: string; analysis: AIAnalysis }) => {
-      setActiveGames(prev => 
-        prev.map(game => 
-          game.id === data.gameId 
-            ? { ...game, aiAnalysis: data.analysis }
-            : game
-        )
+      setActiveGames(prev =>
+        prev.map(game => (game.id === data.gameId ? { ...game, aiAnalysis: data.analysis } : game))
       );
     });
 
@@ -259,7 +277,7 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
   const joinGame = async (gameId: string, bet: number): Promise<void> => {
     setIsLoading(true);
     setError(null);
-    
+
     try {
       if (!socket) {
         throw new Error('Not connected to game server');
@@ -272,10 +290,14 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
 
         socket.emit('game:join', { gameId, bet });
 
-        const handleJoinResponse = (response: { success: boolean; game?: Game; error?: string }) => {
+        const handleJoinResponse = (response: {
+          success: boolean;
+          game?: Game;
+          error?: string;
+        }) => {
           clearTimeout(timeout);
           socket.off('game:join:response', handleJoinResponse);
-          
+
           if (response.success && response.game) {
             setCurrentGame(response.game);
             resolve();
@@ -283,7 +305,7 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
             reject(new Error(response.error || 'Failed to join game'));
           }
         };
-        
+
         socket.on('game:join:response', handleJoinResponse);
       });
     } catch (error) {
@@ -306,7 +328,7 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
     }
   };
 
-  const makeMove = async (gameId: string, move: any): Promise<void> => {
+  const makeMove = async (gameId: string, move: GameMove): Promise<void> => {
     if (!socket) throw new Error('Not connected to gaming engine');
 
     try {
@@ -334,18 +356,22 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
     try {
       return new Promise((resolve, reject) => {
         const timeout = setTimeout(() => reject(new Error('Create game timeout')), 10000);
-        
-        const handleCreateResponse = (response: { success: boolean; gameId?: string; error?: string }) => {
+
+        const handleCreateResponse = (response: {
+          success: boolean;
+          gameId?: string;
+          error?: string;
+        }) => {
           clearTimeout(timeout);
           socket.off('game:create:response', handleCreateResponse);
-          
+
           if (response.success && response.gameId) {
             resolve(response.gameId);
           } else {
             reject(new Error(response.error || 'Failed to create game'));
           }
         };
-        
+
         socket.emit('game:create', gameConfig);
         socket.on('game:create:response', handleCreateResponse);
       });
@@ -366,11 +392,9 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
   };
 
   const markNotificationRead = (notificationId: string) => {
-    setNotifications(prev => 
-      prev.map(notification => 
-        notification.id === notificationId 
-          ? { ...notification, read: true }
-          : notification
+    setNotifications(prev =>
+      prev.map(notification =>
+        notification.id === notificationId ? { ...notification, read: true } : notification
       )
     );
   };
@@ -388,7 +412,7 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
     currentGame,
     isLoading,
     error,
-    
+
     // Actions
     joinGame,
     leaveGame,
@@ -398,17 +422,13 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
     getGameHistory,
     markNotificationRead,
     clearNotifications,
-    
+
     // Real-time
     socket,
     isConnected,
   };
 
-  return (
-    <GameContext.Provider value={value}>
-      {children}
-    </GameContext.Provider>
-  );
+  return <GameContext.Provider value={value}>{children}</GameContext.Provider>;
 };
 
 // Hook
@@ -418,4 +438,4 @@ export const useGame = (): GameContextType => {
     throw new Error('useGame must be used within a GameProvider');
   }
   return context;
-}; 
+};

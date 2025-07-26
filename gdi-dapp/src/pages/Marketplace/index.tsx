@@ -7,9 +7,7 @@ const Marketplace: React.FC = () => {
       <Typography variant="h4" gutterBottom>
         Marketplace
       </Typography>
-      <Typography>
-        Marketplace content will be displayed here.
-      </Typography>
+      <Typography>Marketplace content will be displayed here.</Typography>
     </Box>
   );
 };

@@ -7,9 +7,7 @@ const GameRoom: React.FC = () => {
       <Typography variant="h4" gutterBottom>
         Game Room
       </Typography>
-      <Typography>
-        Game room content will be displayed here.
-      </Typography>
+      <Typography>Game room content will be displayed here.</Typography>
     </Box>
   );
 };

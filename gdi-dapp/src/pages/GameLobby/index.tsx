@@ -7,9 +7,7 @@ const GameLobby: React.FC = () => {
       <Typography variant="h4" gutterBottom>
         Game Lobby
       </Typography>
-      <Typography>
-        Game lobby content will be displayed here.
-      </Typography>
+      <Typography>Game lobby content will be displayed here.</Typography>
     </Box>
   );
 };

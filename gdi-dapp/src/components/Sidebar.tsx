@@ -52,7 +52,7 @@ const Sidebar: React.FC = () => {
   const location = useLocation();
   const { activeGames, gameStats } = useGame();
   const { aiFeatures } = useAI();
-  
+
   const [expandedItems, setExpandedItems] = useState<string[]>(['games']);
 
   const handleItemClick = (path: string) => {
@@ -60,10 +60,8 @@ const Sidebar: React.FC = () => {
   };
 
   const handleExpandClick = (itemId: string) => {
-    setExpandedItems(prev => 
-      prev.includes(itemId) 
-        ? prev.filter(id => id !== itemId)
-        : [...prev, itemId]
+    setExpandedItems(prev =>
+      prev.includes(itemId) ? prev.filter(id => id !== itemId) : [...prev, itemId]
     );
   };
 
@@ -217,14 +215,10 @@ const Sidebar: React.FC = () => {
                 </Box>
               }
             />
-            {hasChildren && (
-              <Box>
-                {isExpanded ? <ExpandLess /> : <ExpandMore />}
-              </Box>
-            )}
+            {hasChildren && <Box>{isExpanded ? <ExpandLess /> : <ExpandMore />}</Box>}
           </ListItemButton>
         </ListItem>
-        
+
         {hasChildren && (
           <Collapse in={isExpanded} timeout="auto" unmountOnExit>
             <List component="div" disablePadding>
@@ -262,12 +256,7 @@ const Sidebar: React.FC = () => {
               <Typography variant="body2" color="text.secondary">
                 Active Games:
               </Typography>
-              <Chip
-                label={activeGames.length}
-                size="small"
-                color="primary"
-                variant="outlined"
-              />
+              <Chip label={activeGames.length} size="small" color="primary" variant="outlined" />
             </Box>
             <Box display="flex" justifyContent="space-between">
               <Typography variant="body2" color="text.secondary">
@@ -281,20 +270,13 @@ const Sidebar: React.FC = () => {
               <Typography variant="body2" color="text.secondary">
                 AI Features:
               </Typography>
-              <Chip
-                label={aiFeatures.length}
-                size="small"
-                color="secondary"
-                variant="outlined"
-              />
+              <Chip label={aiFeatures.length} size="small" color="secondary" variant="outlined" />
             </Box>
           </Box>
         </Box>
 
         {/* Navigation Menu */}
-        <List sx={{ pt: 1 }}>
-          {menuItems.map(item => renderMenuItem(item))}
-        </List>
+        <List sx={{ pt: 1 }}>{menuItems.map(item => renderMenuItem(item))}</List>
 
         {/* AI Status */}
         <Divider sx={{ my: 2 }} />
@@ -305,21 +287,11 @@ const Sidebar: React.FC = () => {
           <Box display="flex" flexDirection="column" gap={1}>
             <Box display="flex" justifyContent="space-between" alignItems="center">
               <Typography variant="caption">NovaSanctum</Typography>
-              <Chip
-                label="Online"
-                size="small"
-                color="success"
-                sx={{ height: 16 }}
-              />
+              <Chip label="Online" size="small" color="success" sx={{ height: 16 }} />
             </Box>
             <Box display="flex" justifyContent="space-between" alignItems="center">
               <Typography variant="caption">AthenaMist</Typography>
-              <Chip
-                label="Online"
-                size="small"
-                color="success"
-                sx={{ height: 16 }}
-              />
+              <Chip label="Online" size="small" color="success" sx={{ height: 16 }} />
             </Box>
           </Box>
         </Box>
@@ -328,4 +300,4 @@ const Sidebar: React.FC = () => {
   );
 };
 
-export default Sidebar; 
+export default Sidebar;

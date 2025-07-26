@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import { CssBaseline, Box, CircularProgress } from '@mui/material';
 import { Web3Provider as EthersWeb3Provider } from '@ethersproject/providers';
+import { ethers } from 'ethers';
 import { Web3AppProvider } from './providers/Web3Provider';
 
 // Components
@@ -90,7 +91,9 @@ const theme = createTheme({
 });
 
 // Web3 Provider wrapper
-export function getLibrary(provider: any): EthersWeb3Provider {
+export function getLibrary(
+  provider: ethers.providers.ExternalProvider | ethers.providers.JsonRpcFetchFunc
+): EthersWeb3Provider {
   const library = new EthersWeb3Provider(provider);
   library.pollingInterval = 12000;
   return library;
@@ -123,17 +126,19 @@ const App: React.FC = () => {
     const initializeApp = async () => {
       try {
         console.log('🚀 Initializing GameDin L3 DApp...');
-        
+
         // Initialize AI services
         await initializeAIServices();
         console.log('✅ AI services initialized');
-        
+
         // Initialize blockchain service with local Hardhat node
         const providerUrl = 'http://localhost:8545';
         console.log(`🔗 Connecting to local Hardhat node at ${providerUrl}`);
-        await initializeBlockchainService(providerUrl);
+        // Create a new ethers.js provider
+        const provider = new ethers.providers.JsonRpcProvider(providerUrl);
+        await initializeBlockchainService(provider);
         console.log('✅ Blockchain service connected to local Hardhat node');
-        
+
         setIsInitialized(true);
       } catch (error) {
         console.error('❌ Failed to initialize app:', error);
@@ -187,4 +192,4 @@ const App: React.FC = () => {
   );
 };
 
-export default App; 
+export default App;

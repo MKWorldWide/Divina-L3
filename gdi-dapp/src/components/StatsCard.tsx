@@ -1,16 +1,6 @@
 import React from 'react';
-import {
-  Card,
-  CardContent,
-  Box,
-  Typography,
-  Chip,
-  useTheme,
-} from '@mui/material';
-import {
-  TrendingUp,
-  TrendingDown,
-} from '@mui/icons-material';
+import { Card, CardContent, Box, Typography, Chip, useTheme } from '@mui/material';
+import { TrendingUp, TrendingDown } from '@mui/icons-material';
 
 interface StatsCardProps {
   title: string;
@@ -81,7 +71,7 @@ const StatsCard: React.FC<StatsCardProps> = ({
             }}
           />
         </Box>
-        
+
         <Typography
           variant="h4"
           sx={{
@@ -95,21 +85,13 @@ const StatsCard: React.FC<StatsCardProps> = ({
         >
           {value}
         </Typography>
-        
-        <Typography
-          variant="body2"
-          color="text.secondary"
-          sx={{ mb: 1, fontWeight: 500 }}
-        >
+
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 1, fontWeight: 500 }}>
           {title}
         </Typography>
-        
+
         {subtitle && (
-          <Typography
-            variant="caption"
-            color="text.secondary"
-            sx={{ opacity: 0.7 }}
-          >
+          <Typography variant="caption" color="text.secondary" sx={{ opacity: 0.7 }}>
             {subtitle}
           </Typography>
         )}
@@ -118,4 +100,4 @@ const StatsCard: React.FC<StatsCardProps> = ({
   );
 };
 
-export default StatsCard; 
+export default StatsCard;

@@ -56,18 +56,29 @@ interface AIContextType {
   recommendations: AIRecommendation[];
   isLoading: boolean;
   error: string | null;
-  
+
   // Actions
   analyzePlayer: (playerId: string, gameId: string) => Promise<AIAnalysis>;
   getRecommendations: (playerId: string, gameId: string) => Promise<AIRecommendation[]>;
-  predictOutcome: (gameId: string, playerId: string) => Promise<any>;
+  predictOutcome: (
+    gameId: string,
+    playerId: string
+  ) => Promise<{
+    success: boolean;
+    predictedWinner: string;
+    confidence: number;
+    gameId: string;
+    timestamp: Date;
+  }>;
   detectFraud: (gameId: string, playerId: string) => Promise<number>;
   optimizeStrategy: (playerId: string, gameType: string) => Promise<string[]>;
   enableFeature: (featureId: string) => Promise<void>;
   disableFeature: (featureId: string) => Promise<void>;
-  
+
   // Real-time
-  subscribeToAIUpdates: (callback: (update: any) => void) => void;
+  subscribeToAIUpdates: (
+    callback: (update: AIAnalysis | AIRecommendation | AIStatus) => void
+  ) => void;
   unsubscribeFromAIUpdates: () => void;
 }
 
@@ -89,7 +100,7 @@ export const AIProvider: React.FC<AIProviderProps> = ({ children }) => {
       athenaMist: false,
     },
   });
-  
+
   const [aiFeatures, setAiFeatures] = useState<AIFeature[]>([
     {
       id: 'fraud-detection',
@@ -124,7 +135,7 @@ export const AIProvider: React.FC<AIProviderProps> = ({ children }) => {
       description: 'AthenaMist AI strategy recommendations',
       type: 'optimization',
       isEnabled: true,
-      confidence: 0.90,
+      confidence: 0.9,
       lastUpdate: new Date(),
     },
     {
@@ -137,12 +148,14 @@ export const AIProvider: React.FC<AIProviderProps> = ({ children }) => {
       lastUpdate: new Date(),
     },
   ]);
-  
+
   const [currentAnalysis, setCurrentAnalysis] = useState<AIAnalysis | null>(null);
   const [recommendations, setRecommendations] = useState<AIRecommendation[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [updateCallback, setUpdateCallback] = useState<((update: any) => void) | null>(null);
+  const [updateCallback, setUpdateCallback] = useState<
+    ((update: AIAnalysis | AIRecommendation | AIStatus) => void) | null
+  >(null);
 
   // Initialize AI services
   useEffect(() => {
@@ -153,15 +166,15 @@ export const AIProvider: React.FC<AIProviderProps> = ({ children }) => {
   const initializeAIServices = async () => {
     try {
       setIsLoading(true);
-      
+
       // Check NovaSanctum AI service
       const novaSanctumResponse = await fetch(`${process.env.REACT_APP_NOVASANCTUM_URL}/health`);
       const novaSanctumOnline = novaSanctumResponse.ok;
-      
+
       // Check AthenaMist AI service
       const athenaMistResponse = await fetch(`${process.env.REACT_APP_ATHENAMIST_URL}/health`);
       const athenaMistOnline = athenaMistResponse.ok;
-      
+
       setAiStatus(prev => ({
         ...prev,
         isOnline: novaSanctumOnline || athenaMistOnline,
@@ -171,7 +184,6 @@ export const AIProvider: React.FC<AIProviderProps> = ({ children }) => {
         },
         lastPing: new Date(),
       }));
-      
     } catch (error) {
       console.error('Failed to initialize AI services:', error);
       setError('Failed to connect to AI services');
@@ -184,20 +196,20 @@ export const AIProvider: React.FC<AIProviderProps> = ({ children }) => {
     const interval = setInterval(async () => {
       try {
         const startTime = Date.now();
-        
+
         // Check both AI services
         const [novaSanctumResponse, athenaMistResponse] = await Promise.allSettled([
           fetch(`${process.env.REACT_APP_NOVASANCTUM_URL}/health`),
           fetch(`${process.env.REACT_APP_ATHENAMIST_URL}/health`),
         ]);
-        
+
         const responseTime = Date.now() - startTime;
-        
+
         setAiStatus(prev => ({
           ...prev,
-          isOnline: 
-            novaSanctumResponse.status === 'fulfilled' && novaSanctumResponse.value.ok ||
-            athenaMistResponse.status === 'fulfilled' && athenaMistResponse.value.ok,
+          isOnline:
+            (novaSanctumResponse.status === 'fulfilled' && novaSanctumResponse.value.ok) ||
+            (athenaMistResponse.status === 'fulfilled' && athenaMistResponse.value.ok),
           services: {
             novaSanctum: novaSanctumResponse.status === 'fulfilled' && novaSanctumResponse.value.ok,
             athenaMist: athenaMistResponse.status === 'fulfilled' && athenaMistResponse.value.ok,
@@ -205,7 +217,6 @@ export const AIProvider: React.FC<AIProviderProps> = ({ children }) => {
           lastPing: new Date(),
           responseTime,
         }));
-        
       } catch (error) {
         console.error('AI health check failed:', error);
       }
@@ -218,7 +229,7 @@ export const AIProvider: React.FC<AIProviderProps> = ({ children }) => {
     try {
       setIsLoading(true);
       setError(null);
-      
+
       const response = await fetch(`${process.env.REACT_APP_AI_SERVICE_URL}/analyze`, {
         method: 'POST',
         headers: {
@@ -226,19 +237,19 @@ export const AIProvider: React.FC<AIProviderProps> = ({ children }) => {
         },
         body: JSON.stringify({ playerId, gameId }),
       });
-      
+
       if (!response.ok) {
         throw new Error('Failed to analyze player');
       }
-      
+
       const analysis: AIAnalysis = await response.json();
       setCurrentAnalysis(analysis);
-      
+
       // Notify subscribers
       if (updateCallback) {
-        updateCallback({ type: 'analysis', data: analysis });
+        updateCallback(analysis);
       }
-      
+
       return analysis;
     } catch (error) {
       console.error('Failed to analyze player:', error);
@@ -249,7 +260,10 @@ export const AIProvider: React.FC<AIProviderProps> = ({ children }) => {
     }
   };
 
-  const getRecommendations = async (playerId: string, gameId: string): Promise<AIRecommendation[]> => {
+  const getRecommendations = async (
+    playerId: string,
+    gameId: string
+  ): Promise<AIRecommendation[]> => {
     try {
       const response = await fetch(`${process.env.REACT_APP_AI_SERVICE_URL}/recommendations`, {
         method: 'POST',
@@ -258,14 +272,14 @@ export const AIProvider: React.FC<AIProviderProps> = ({ children }) => {
         },
         body: JSON.stringify({ playerId, gameId }),
       });
-      
+
       if (!response.ok) {
         throw new Error('Failed to get recommendations');
       }
-      
+
       const recommendations: AIRecommendation[] = await response.json();
       setRecommendations(recommendations);
-      
+
       return recommendations;
     } catch (error) {
       console.error('Failed to get recommendations:', error);
@@ -273,7 +287,7 @@ export const AIProvider: React.FC<AIProviderProps> = ({ children }) => {
     }
   };
 
-  const predictOutcome = async (gameId: string, playerId: string): Promise<any> => {
+  const predictOutcome = async (gameId: string, playerId: string) => {
     try {
       const response = await fetch(`${process.env.REACT_APP_AI_SERVICE_URL}/predict`, {
         method: 'POST',
@@ -282,11 +296,11 @@ export const AIProvider: React.FC<AIProviderProps> = ({ children }) => {
         },
         body: JSON.stringify({ gameId, playerId }),
       });
-      
+
       if (!response.ok) {
         throw new Error('Failed to predict outcome');
       }
-      
+
       return await response.json();
     } catch (error) {
       console.error('Failed to predict outcome:', error);
@@ -303,11 +317,11 @@ export const AIProvider: React.FC<AIProviderProps> = ({ children }) => {
         },
         body: JSON.stringify({ gameId, playerId }),
       });
-      
+
       if (!response.ok) {
         throw new Error('Failed to detect fraud');
       }
-      
+
       const result = await response.json();
       return result.fraudScore;
     } catch (error) {
@@ -325,11 +339,11 @@ export const AIProvider: React.FC<AIProviderProps> = ({ children }) => {
         },
         body: JSON.stringify({ playerId, gameType }),
       });
-      
+
       if (!response.ok) {
         throw new Error('Failed to optimize strategy');
       }
-      
+
       const result = await response.json();
       return result.strategies;
     } catch (error) {
@@ -339,26 +353,20 @@ export const AIProvider: React.FC<AIProviderProps> = ({ children }) => {
   };
 
   const enableFeature = async (featureId: string): Promise<void> => {
-    setAiFeatures(prev => 
-      prev.map(feature => 
-        feature.id === featureId 
-          ? { ...feature, isEnabled: true }
-          : feature
-      )
+    setAiFeatures(prev =>
+      prev.map(feature => (feature.id === featureId ? { ...feature, isEnabled: true } : feature))
     );
   };
 
   const disableFeature = async (featureId: string): Promise<void> => {
-    setAiFeatures(prev => 
-      prev.map(feature => 
-        feature.id === featureId 
-          ? { ...feature, isEnabled: false }
-          : feature
-      )
+    setAiFeatures(prev =>
+      prev.map(feature => (feature.id === featureId ? { ...feature, isEnabled: false } : feature))
     );
   };
 
-  const subscribeToAIUpdates = (callback: (update: any) => void) => {
+  const subscribeToAIUpdates = (
+    callback: (update: AIAnalysis | AIRecommendation | AIStatus) => void
+  ) => {
     setUpdateCallback(() => callback);
   };
 
@@ -374,7 +382,7 @@ export const AIProvider: React.FC<AIProviderProps> = ({ children }) => {
     recommendations,
     isLoading,
     error,
-    
+
     // Actions
     analyzePlayer,
     getRecommendations,
@@ -383,17 +391,13 @@ export const AIProvider: React.FC<AIProviderProps> = ({ children }) => {
     optimizeStrategy,
     enableFeature,
     disableFeature,
-    
+
     // Real-time
     subscribeToAIUpdates,
     unsubscribeFromAIUpdates,
   };
 
-  return (
-    <AIContext.Provider value={value}>
-      {children}
-    </AIContext.Provider>
-  );
+  return <AIContext.Provider value={value}>{children}</AIContext.Provider>;
 };
 
 // Hook
@@ -403,4 +407,4 @@ export const useAI = (): AIContextType => {
     throw new Error('useAI must be used within an AIProvider');
   }
   return context;
-}; 
+};
