@@ -1,13 +1,22 @@
-name: CI
+name: CI/CD Pipeline
 
 on:
   push:
     branches: [main, master]
+    paths-ignore:
+      - '**/README.md'
+      - '**/LICENSE'
   pull_request:
     branches: [main, master]
 
+env:
+  CI: true
+  REACT_APP_ENV: test
+  NODE_ENV: test
+
 jobs:
-  build-and-test:
+  test:
+    name: Test
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -15,23 +24,51 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
 
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v3
         with:
           node-version: ${{ matrix.node-version }}
+          cache: 'npm'
 
       - name: Install dependencies
-        run: npm install
+        working-directory: ./gdi-dapp
+        run: npm ci
 
-      - name: Lint (if available)
-        run: npm run lint || true
+      - name: Run linting
+        working-directory: ./gdi-dapp
+        run: npx eslint 'src/**/*.{js,jsx,ts,tsx}' --quiet
 
       - name: Run tests
-        run: npm test
+        working-directory: ./gdi-dapp
+        run: CI=true npm test -- --watchAll=false --coverage
 
-      - name: Upload coverage (if available)
+      - name: Upload coverage report
         uses: actions/upload-artifact@v3
         with:
-          name: coverage
-          path: coverage/ 
+          name: coverage-report
+          path: gdi-dapp/coverage/lcov.info
+
+  build:
+    name: Build
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Use Node.js 18.x
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18.x
+          cache: 'npm'
+
+      - name: Install dependencies
+        working-directory: ./gdi-dapp
+        run: npm ci
+
+      - name: Build application
+        working-directory: ./gdi-dapp
+        run: npm run build
