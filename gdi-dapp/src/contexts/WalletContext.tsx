@@ -1,55 +1,71 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { useWeb3React } from '@web3-react/core';
-import { InjectedConnector } from '@web3-react/injected-connector';
-import { WalletConnectConnector } from '@web3-react/walletconnect-connector';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
+import { initializeConnector, useWeb3React } from '@web3-react/core';
+import { MetaMask } from '@web3-react/metamask';
+import { WalletConnect } from '@web3-react/walletconnect';
 import { ethers } from 'ethers';
+
+// Add type for the wallet connect options
+type WalletConnectOptions = {
+  rpc: {
+    [chainId: number]: string;
+  };
+  qrcode?: boolean;
+};
 
 // Types
 interface WalletContextType {
   account: string | null;
   isConnected: boolean;
   balance: number;
-  connect: () => Promise<void>;
+  connect: (connector?: 'injected' | 'walletconnect') => Promise<void>;
   disconnect: () => void;
   sendTransaction: (to: string, amount: string) => Promise<string>;
   signMessage: (message: string) => Promise<string>;
   chainId: number | null;
   provider: ethers.providers.Web3Provider | null;
+  error?: Error;
 }
 
 interface WalletProviderProps {
   children: ReactNode;
 }
 
-// Connectors
-const injected = new InjectedConnector({
-  supportedChainIds: [1, 3, 4, 5, 42, 56, 97, 137, 80001], // Mainnet, Testnets, BSC, Polygon
-});
+// Initialize connectors with proper types
+const [metaMask] = initializeConnector<MetaMask>(
+  (actions) => new MetaMask({ actions })
+);
 
-const walletConnect = new WalletConnectConnector({
-  rpc: {
-    1: process.env.REACT_APP_ETHEREUM_RPC_URL || 'https://mainnet.infura.io/v3/your-project-id',
-    56: 'https://bsc-dataseed.binance.org/',
-    137: 'https://polygon-rpc.com/',
-  },
-  qrcode: true,
-});
+const [walletConnect] = initializeConnector<WalletConnect>(
+  (actions) => {
+    const options: WalletConnectOptions = {
+      rpc: {
+        1: process.env.REACT_APP_ETHEREUM_RPC_URL || 'https://mainnet.infura.io/v3/your-project-id',
+        56: 'https://bsc-dataseed.binance.org/',
+        137: 'https://polygon-rpc.com/',
+      },
+      qrcode: true,
+    };
+    return new WalletConnect(actions, options);
+  }
+);
 
 // Context
 const WalletContext = createContext<WalletContextType | undefined>(undefined);
 
 // Provider Component
 export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
-  const { account, library, chainId, activate, deactivate } = useWeb3React();
+  const { account, provider: web3Provider, chainId } = useWeb3React();
   const [balance, setBalance] = useState<number>(0);
+  const [error, setError] = useState<Error | undefined>(undefined);
   const [provider, setProvider] = useState<ethers.providers.Web3Provider | null>(null);
 
-  // Update provider when library changes
+  // Update provider when web3Provider changes
   useEffect(() => {
-    if (library) {
-      setProvider(library);
+    if (web3Provider) {
+      const ethersProvider = new ethers.providers.Web3Provider(web3Provider as any);
+      setProvider(ethersProvider);
     }
-  }, [library]);
+  }, [web3Provider]);
 
   // Update balance when account or provider changes
   useEffect(() => {
@@ -76,24 +92,29 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
     return () => clearInterval(interval);
   }, [account, provider]);
 
-  const connect = async () => {
+  const connect = useCallback(async (connector: 'injected' | 'walletconnect' = 'injected') => {
     try {
-      // Try MetaMask first
-      await activate(injected);
-    } catch (error) {
-      console.log('MetaMask connection failed, trying WalletConnect...');
-      try {
-        await activate(walletConnect);
-      } catch (walletConnectError) {
-        console.error('Failed to connect wallet:', walletConnectError);
-        throw new Error('Failed to connect wallet. Please make sure you have MetaMask or WalletConnect installed.');
+      setError(undefined);
+      if (connector === 'injected') {
+        await metaMask.activate();
+      } else {
+        await walletConnect.activate();
       }
+    } catch (err) {
+      console.error('Failed to connect wallet:', err);
+      setError(err instanceof Error ? err : new Error('Failed to connect wallet'));
     }
-  };
+  }, []);
 
-  const disconnect = () => {
-    deactivate();
-  };
+  const disconnect = useCallback(() => {
+    try {
+      metaMask.deactivate?.();
+      walletConnect.deactivate?.();
+    } catch (err) {
+      console.error('Error disconnecting wallet:', err);
+      setError(err instanceof Error ? err : new Error('Error disconnecting wallet'));
+    }
+  }, []);
 
   const sendTransaction = async (to: string, amount: string): Promise<string> => {
     if (!account || !provider) {
@@ -130,16 +151,17 @@ export const WalletProvider: React.FC<WalletProviderProps> = ({ children }) => {
     }
   };
 
-  const value: WalletContextType = {
-    account,
+  const value = {
+    account: account || null,
     isConnected: !!account,
     balance,
     connect,
     disconnect,
     sendTransaction,
     signMessage,
-    chainId,
+    chainId: chainId || null,
     provider,
+    error,
   };
 
   return (

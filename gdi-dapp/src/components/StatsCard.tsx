@@ -42,7 +42,7 @@ const StatsCard: React.FC<StatsCardProps> = ({
   const getTrendIcon = () => {
     if (trend === 'up') return <TrendingUp fontSize="small" />;
     if (trend === 'down') return <TrendingDown fontSize="small" />;
-    return null;
+    return undefined; // Return undefined instead of null for the Chip icon prop
   };
 
   return (

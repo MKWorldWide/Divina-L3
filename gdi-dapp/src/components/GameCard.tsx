@@ -13,7 +13,7 @@ import {
 import {
   Casino,
   SportsEsports,
-  Puzzle,
+  Extension as Puzzle,
   EmojiEvents,
   PlayArrow,
   People,

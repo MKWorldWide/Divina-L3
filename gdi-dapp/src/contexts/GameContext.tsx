@@ -257,16 +257,21 @@ export const GameProvider: React.FC<GameProviderProps> = ({ children }) => {
   };
 
   const joinGame = async (gameId: string, bet: number): Promise<void> => {
-    if (!socket) throw new Error('Not connected to gaming engine');
-
+    setIsLoading(true);
+    setError(null);
+    
     try {
-      setIsLoading(true);
-      socket.emit('game:join', { gameId, bet });
-      
-      // Wait for confirmation
-      await new Promise((resolve, reject) => {
-        const timeout = setTimeout(() => reject(new Error('Join timeout')), 10000);
-        
+      if (!socket) {
+        throw new Error('Not connected to game server');
+      }
+
+      return new Promise<void>((resolve, reject) => {
+        const timeout = setTimeout(() => {
+          reject(new Error('Connection timeout'));
+        }, 10000);
+
+        socket.emit('game:join', { gameId, bet });
+
         const handleJoinResponse = (response: { success: boolean; game?: Game; error?: string }) => {
           clearTimeout(timeout);
           socket.off('game:join:response', handleJoinResponse);

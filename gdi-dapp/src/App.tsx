@@ -128,8 +128,8 @@ const App: React.FC = () => {
         await initializeAIServices();
         console.log('✅ AI services initialized');
         
-        // Initialize blockchain service
-        await initializeBlockchainService();
+        // Initialize blockchain service with default provider
+        await initializeBlockchainService('http://localhost:8545');
         console.log('✅ Blockchain service initialized');
         
         setIsInitialized(true);
@@ -150,7 +150,7 @@ const App: React.FC = () => {
   }
 
   return (
-    <Web3ReactProvider getLibrary={getLibrary}>
+    <Web3ReactProvider connectors={[]}>
       <ThemeProvider theme={theme}>
         <CssBaseline />
         <WalletProvider>

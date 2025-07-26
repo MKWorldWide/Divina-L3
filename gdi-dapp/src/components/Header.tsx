@@ -132,7 +132,7 @@ const Header: React.FC = () => {
           <Button
             variant="contained"
             startIcon={<AccountBalanceWallet />}
-            onClick={connect}
+            onClick={() => connect('injected')}
             sx={{
               background: 'linear-gradient(45deg, #6366f1 30%, #ec4899 90%)',
               borderRadius: 2,

@@ -1,34 +1,27 @@
 import React, { useState, useEffect } from 'react';
 import {
   Box,
-  Grid,
+  Typography,
   Card,
   CardContent,
-  Typography,
   Button,
-  Chip,
   LinearProgress,
+  Chip,
   Avatar,
   List,
   ListItem,
-  ListItemText,
   ListItemAvatar,
-  IconButton,
+  ListItemText,
   useTheme,
 } from '@mui/material';
 import {
-  TrendingUp,
-  TrendingDown,
   Casino,
   SportsEsports,
-  Puzzle,
+  Extension,
   EmojiEvents,
   Psychology,
-  AutoAwesome,
   PlayArrow,
   AccountBalanceWallet,
-  Analytics,
-  Notifications,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useWallet } from '../contexts/WalletContext';
@@ -43,10 +36,9 @@ import QuickActionCard from '../components/QuickActionCard';
 
 const Dashboard: React.FC = () => {
   const theme = useTheme();
-  const navigate = useNavigate();
-  const { account, balance, isConnected } = useWallet();
-  const { activeGames, gameStats, notifications } = useGame();
-  const { aiStatus, aiFeatures, currentAnalysis } = useAI();
+  const { balance } = useWallet();
+  const { gameStats } = useGame();
+  const { aiFeatures } = useAI();
 
   const [recentGames, setRecentGames] = useState<any[]>([]);
   const [topPlayers, setTopPlayers] = useState<any[]>([]);
@@ -107,7 +99,7 @@ const Dashboard: React.FC = () => {
     {
       title: 'Puzzle Challenge',
       description: 'Solve brain teasers',
-      icon: <Puzzle />,
+      icon: <Extension />,
       color: '#10b981',
       action: () => navigate('/lobby?category=puzzle'),
     },
@@ -133,8 +125,8 @@ const Dashboard: React.FC = () => {
       </Box>
 
       {/* Stats Overview */}
-      <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid item xs={12} sm={6} md={3}>
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: '1fr 1fr 1fr 1fr' }, gap: 3, mb: 4 }}>
+        <Box>
           <StatsCard
             title="Total Balance"
             value={`${balance.toFixed(4)} GDI`}
@@ -143,52 +135,52 @@ const Dashboard: React.FC = () => {
             trend={balance > 0 ? 'up' : 'down'}
             trendValue={`${balance > 0 ? '+' : ''}${balance.toFixed(2)}`}
           />
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
+        </Box>
+        <Box>
           <StatsCard
             title="Win Rate"
             value={`${gameStats.winRate}%`}
-            icon={<TrendingUp />}
-            color={getWinRateColor(gameStats.winRate)}
+            icon={<EmojiEvents color="primary" />}
+            color={gameStats.winRate > 50 ? 'success' : 'error'}
             trend={gameStats.winRate > 50 ? 'up' : 'down'}
             trendValue={`${gameStats.winRate > 50 ? '+' : ''}${gameStats.winRate}%`}
           />
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
+        </Box>
+        <Box>
           <StatsCard
             title="Active Games"
             value={activeGames.length.toString()}
-            icon={<PlayArrow />}
-            color="primary"
-            trend="up"
+            icon={<SportsEsports color="primary" />}
+            color={activeGames.length > 0 ? 'info' : 'warning'}
+            trend={activeGames.length > 0 ? 'up' : 'neutral'}
             trendValue={`${activeGames.length} running`}
           />
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
+        </Box>
+        <Box>
           <StatsCard
             title="AI Services"
             value={aiFeatures.filter(f => f.isEnabled).length.toString()}
-            icon={<AutoAwesome />}
-            color={aiStatus.isOnline ? 'success' : 'error'}
-            trend={aiStatus.isOnline ? 'up' : 'down'}
-            trendValue={aiStatus.isOnline ? 'Online' : 'Offline'}
+            icon={<Psychology color="primary" />}
+            color="success"
+            trend="up"
+            trendValue={`${aiFeatures.filter(f => f.isEnabled).length} active`}
           />
-        </Grid>
-      </Grid>
+        </Box>
+      </Box>
 
       {/* Quick Actions */}
-      <Grid container spacing={3} sx={{ mb: 4 }}>
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: '1fr 1fr 1fr 1fr' }, gap: 3, mb: 4 }}>
         {quickActions.map((action, index) => (
-          <Grid item xs={12} sm={6} md={3} key={index}>
+          <Box key={index}>
             <QuickActionCard {...action} />
-          </Grid>
+          </Box>
         ))}
-      </Grid>
+      </Box>
 
       {/* Main Content Grid */}
-      <Grid container spacing={3}>
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '2fr 1fr' }, gap: 3 }}>
         {/* Left Column */}
-        <Grid item xs={12} lg={8}>
+        <Box>
           {/* Active Games */}
           <Card sx={{ mb: 3 }}>
             <CardContent>
@@ -219,13 +211,13 @@ const Dashboard: React.FC = () => {
                   </Button>
                 </Box>
               ) : (
-                <Grid container spacing={2}>
+                <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>
                   {activeGames.slice(0, 4).map((game) => (
-                    <Grid item xs={12} sm={6} key={game.id}>
+                    <Box key={game.id}>
                       <GameCard game={game} />
-                    </Grid>
+                    </Box>
                   ))}
-                </Grid>
+                </Box>
               )}
             </CardContent>
           </Card>
@@ -244,7 +236,7 @@ const Dashboard: React.FC = () => {
                       <Avatar sx={{ bgcolor: theme.palette.primary.main }}>
                         {game.type === 'casino' && <Casino />}
                         {game.type === 'esports' && <SportsEsports />}
-                        {game.type === 'puzzle' && <Puzzle />}
+                        {game.type === 'puzzle' && <Extension />}
                         {game.type === 'tournament' && <EmojiEvents />}
                       </Avatar>
                     </ListItemAvatar>
@@ -270,19 +262,19 @@ const Dashboard: React.FC = () => {
                 AI Insights
               </Typography>
               
-              <Grid container spacing={2}>
+              <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr', md: '1fr 1fr 1fr' }, gap: 2 }}>
                 {aiInsights.slice(0, 3).map((insight, index) => (
-                  <Grid item xs={12} sm={6} md={4} key={index}>
+                  <Box key={index}>
                     <AIInsightCard insight={insight} />
-                  </Grid>
+                  </Box>
                 ))}
-              </Grid>
+              </Box>
             </CardContent>
           </Card>
-        </Grid>
+        </Box>
 
         {/* Right Column */}
-        <Grid item xs={12} lg={4}>
+        <Box>
           {/* Top Players */}
           <Card sx={{ mb: 3 }}>
             <CardContent>
@@ -387,8 +379,8 @@ const Dashboard: React.FC = () => {
               </List>
             </CardContent>
           </Card>
-        </Grid>
-      </Grid>
+        </Box>
+      </Box>
     </Box>
   );
 };
