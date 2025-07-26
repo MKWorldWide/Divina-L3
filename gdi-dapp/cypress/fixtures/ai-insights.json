@@ -1,0 +1,35 @@
+[
+  {
+    "id": "1",
+    "title": "Winning Streak Detected",
+    "message": "You're on a 5-game winning streak in Solana Hold'em!",
+    "type": "success",
+    "timestamp": "2025-07-26T10:30:00Z",
+    "actions": [
+      {
+        "label": "View Stats",
+        "url": "/analytics/win-streak"
+      }
+    ]
+  },
+  {
+    "id": "2",
+    "title": "New Strategy Available",
+    "message": "Try our new bluffing strategy for high-stakes games.",
+    "type": "info",
+    "timestamp": "2025-07-26T09:15:00Z",
+    "actions": [
+      {
+        "label": "Learn More",
+        "url": "/learn/strategy/bluffing"
+      }
+    ]
+  },
+  {
+    "id": "3",
+    "title": "Opponent Analysis",
+    "message": "Player Two tends to fold under pressure with weak hands.",
+    "type": "warning",
+    "timestamp": "2025-07-26T08:45:00Z"
+  }
+]

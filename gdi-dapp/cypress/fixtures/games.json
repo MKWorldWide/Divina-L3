@@ -1,0 +1,42 @@
+[
+  {
+    "id": "1",
+    "title": "Solana Hold'em",
+    "status": "waiting",
+    "players": [
+      {
+        "id": "player1",
+        "name": "Player One",
+        "avatar": "/avatars/player1.jpg"
+      },
+      {
+        "id": "player2",
+        "name": "Player Two",
+        "avatar": "/avatars/player2.jpg"
+      }
+    ],
+    "buyIn": 10,
+    "prizePool": 20,
+    "startTime": "2025-07-26T12:00:00Z"
+  },
+  {
+    "id": "2",
+    "title": "High Stakes",
+    "status": "active",
+    "players": [
+      {
+        "id": "player3",
+        "name": "Player Three",
+        "avatar": "/avatars/player3.jpg"
+      },
+      {
+        "id": "player4",
+        "name": "Player Four",
+        "avatar": "/avatars/player4.jpg"
+      }
+    ],
+    "buyIn": 50,
+    "prizePool": 100,
+    "startTime": "2025-07-26T13:00:00Z"
+  }
+]
