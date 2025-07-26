@@ -22,6 +22,7 @@ import {
   Psychology,
   PlayArrow,
   AccountBalanceWallet,
+  Notifications as NotificationsIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useWallet } from '../contexts/WalletContext';
@@ -34,40 +35,143 @@ import AIInsightCard from '../components/AIInsightCard';
 import StatsCard from '../components/StatsCard';
 import QuickActionCard from '../components/QuickActionCard';
 
+interface Game {
+  id: string;
+  title: string;
+  name: string;
+  type: string;
+  status: string;
+  players: number;
+  maxPlayers: number;
+  result?: string;
+  earnings?: number;
+  startTime?: string;
+  endTime?: string;
+}
+
+interface Notification {
+  id: string;
+  title: string;
+  message: string;
+  timestamp: string;
+  type: 'info' | 'success' | 'warning' | 'error';
+  read: boolean;
+}
+
 const Dashboard: React.FC = () => {
   const theme = useTheme();
-  const { balance } = useWallet();
+  const navigate = useNavigate();
+  const { balance, account } = useWallet();
   const { gameStats } = useGame();
   const { aiFeatures } = useAI();
 
-  const [recentGames, setRecentGames] = useState<any[]>([]);
+  const [recentGames, setRecentGames] = useState<Game[]>([]);
   const [topPlayers, setTopPlayers] = useState<any[]>([]);
   const [aiInsights, setAiInsights] = useState<any[]>([]);
+  const [activeGames, setActiveGames] = useState<Game[]>([]);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [aiStatus, setAiStatus] = useState({
+    services: {
+      novaSanctum: false,
+      athenaMist: false,
+    },
+    responseTime: 0,
+  });
+
+  // Mock data for development
+  const mockActiveGames: Game[] = [
+    {
+      id: '1',
+      title: 'Blackjack Tournament',
+      name: 'Blackjack',
+      type: 'casino',
+      status: 'active',
+      players: 3,
+      maxPlayers: 6,
+      startTime: new Date().toISOString(),
+    },
+    {
+      id: '2',
+      title: 'Fortnite Battle',
+      name: 'Fortnite',
+      type: 'esports',
+      status: 'active',
+      players: 8,
+      maxPlayers: 10,
+      startTime: new Date().toISOString(),
+    },
+  ];
+
+  const mockNotifications: Notification[] = [
+    {
+      id: '1',
+      title: 'Game Invitation',
+      message: 'You have been invited to a Blackjack game',
+      timestamp: new Date().toISOString(),
+      type: 'info',
+      read: false,
+    },
+    {
+      id: '2',
+      title: 'Tournament Starting',
+      message: 'Your Fortnite tournament starts in 5 minutes',
+      timestamp: new Date().toISOString(),
+      type: 'warning',
+      read: false,
+    },
+  ];
 
   useEffect(() => {
+    const loadDashboardData = async () => {
+      try {
+        // Set mock data for now
+        setActiveGames(mockActiveGames);
+        setNotifications(mockNotifications);
+        setAiStatus({
+          services: {
+            novaSanctum: true,
+            athenaMist: true,
+          },
+          responseTime: 42, // ms
+        });
+
+        // Load recent games
+        const gamesResponse = await fetch(`${process.env.REACT_APP_API_URL}/games/recent`);
+        const games = await gamesResponse.json();
+        setRecentGames(games);
+
+        // Load top players
+        const playersResponse = await fetch(`${process.env.REACT_APP_API_URL}/players/top`);
+        const players = await playersResponse.json();
+        setTopPlayers(players);
+
+        // Load AI insights
+        const insightsResponse = await fetch(`${process.env.REACT_APP_API_URL}/ai/insights`);
+        const insights = await insightsResponse.json();
+        setAiInsights(insights);
+      } catch (error) {
+        console.error('Failed to load dashboard data:', error);
+        // Fallback to mock data if API fails
+        setRecentGames([
+          {
+            id: '1',
+            title: 'Blackjack',
+            name: 'Blackjack',
+            type: 'casino',
+            status: 'completed',
+            players: 4,
+            maxPlayers: 6,
+            result: 'Won',
+            earnings: 50,
+            startTime: new Date(Date.now() - 3600000).toISOString(),
+            endTime: new Date().toISOString(),
+          },
+        ]);
+      }
+    };
+
     loadDashboardData();
   }, []);
-
-  const loadDashboardData = async () => {
-    try {
-      // Load recent games
-      const gamesResponse = await fetch(`${process.env.REACT_APP_API_URL}/games/recent`);
-      const games = await gamesResponse.json();
-      setRecentGames(games);
-
-      // Load top players
-      const playersResponse = await fetch(`${process.env.REACT_APP_API_URL}/players/top`);
-      const players = await playersResponse.json();
-      setTopPlayers(players);
-
-      // Load AI insights
-      const insightsResponse = await fetch(`${process.env.REACT_APP_API_URL}/ai/insights`);
-      const insights = await insightsResponse.json();
-      setAiInsights(insights);
-    } catch (error) {
-      console.error('Failed to load dashboard data:', error);
-    }
-  };
 
   const getWinRateColor = (winRate: number) => {
     if (winRate >= 70) return 'success';
@@ -242,13 +346,16 @@ const Dashboard: React.FC = () => {
                     </ListItemAvatar>
                     <ListItemText
                       primary={game.name}
-                      secondary={`${game.result} • ${game.earnings > 0 ? '+' : ''}${game.earnings} GDI`}
+                      secondary={`${game.result || 'In Progress'} • ${game.earnings ? `${game.earnings > 0 ? '+' : ''}${game.earnings} GDI` : 'In Progress'}`}
                     />
-                    <Chip
-                      label={game.result}
-                      color={game.result === 'Won' ? 'success' : game.result === 'Lost' ? 'error' : 'default'}
-                      size="small"
-                    />
+                    {game.result && (
+                      <Chip
+                        label={game.result}
+                        color={game.result === 'Won' ? 'success' : 'default'}
+                        size="small"
+                        sx={{ ml: 1 }}
+                      />
+                    )}
                   </ListItem>
                 ))}
               </List>
@@ -360,7 +467,7 @@ const Dashboard: React.FC = () => {
                   <ListItem key={index} divider={index < notifications.length - 1}>
                     <ListItemAvatar>
                       <Avatar sx={{ bgcolor: theme.palette.primary.main }}>
-                        <Notifications />
+                        <NotificationsIcon />
                       </Avatar>
                     </ListItemAvatar>
                     <ListItemText

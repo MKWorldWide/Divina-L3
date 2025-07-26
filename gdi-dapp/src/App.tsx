@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import { CssBaseline, Box, CircularProgress } from '@mui/material';
-import { Web3Provider } from '@ethersproject/providers';
-import { Web3ReactProvider } from '@web3-react/core';
+import { Web3Provider as EthersWeb3Provider } from '@ethersproject/providers';
+import { Web3AppProvider } from './providers/Web3Provider';
 
 // Components
 import Header from './components/Header';
@@ -90,8 +90,8 @@ const theme = createTheme({
 });
 
 // Web3 Provider wrapper
-function getLibrary(provider: any): Web3Provider {
-  const library = new Web3Provider(provider);
+export function getLibrary(provider: any): EthersWeb3Provider {
+  const library = new EthersWeb3Provider(provider);
   library.pollingInterval = 12000;
   return library;
 }
@@ -128,9 +128,11 @@ const App: React.FC = () => {
         await initializeAIServices();
         console.log('✅ AI services initialized');
         
-        // Initialize blockchain service with default provider
-        await initializeBlockchainService('http://localhost:8545');
-        console.log('✅ Blockchain service initialized');
+        // Initialize blockchain service with local Hardhat node
+        const providerUrl = 'http://localhost:8545';
+        console.log(`🔗 Connecting to local Hardhat node at ${providerUrl}`);
+        await initializeBlockchainService(providerUrl);
+        console.log('✅ Blockchain service connected to local Hardhat node');
         
         setIsInitialized(true);
       } catch (error) {
@@ -150,7 +152,7 @@ const App: React.FC = () => {
   }
 
   return (
-    <Web3ReactProvider connectors={[]}>
+    <Web3AppProvider>
       <ThemeProvider theme={theme}>
         <CssBaseline />
         <WalletProvider>
@@ -181,7 +183,7 @@ const App: React.FC = () => {
           </GameProvider>
         </WalletProvider>
       </ThemeProvider>
-    </Web3ReactProvider>
+    </Web3AppProvider>
   );
 };
 
