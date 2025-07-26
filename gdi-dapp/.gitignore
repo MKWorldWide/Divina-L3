@@ -1,0 +1,175 @@
+# Dependencies
+/node_modules
+/.pnp
+.pnp.js
+
+# Testing
+/coverage
+
+# Production
+/build
+/dist
+
+# Misc
+.DS_Store
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Debug logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# IDE
+.idea
+.vscode
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Environment variables
+.env
+
+# Build outputs
+.next
+out
+
+# Local development
+.cache
+
+# TypeScript
+*.tsbuildinfo
+
+# ESLint cache
+.eslintcache
+
+# Jest
+/coverage/
+
+# Local development
+.history/
+
+# Hardhat
+/cache/
+/artifacts/
+/typechain-types/
+
+# Hardhat local node
+/hardhat-node/
+
+# Hardhat coverage
+coverage.json
+coverage/
+
+# Hardhat gas reporter
+/gas-report.txt
+
+# Hardhat network
+.chainId
+
+# Hardhat typechain
+typechain/
+
+# Hardhat cache
+.hardhat/
+
+# Hardhat config
+/hardhat.config.*
+
+# Hardhat network
+/hardhat-network/
+
+# Hardhat node
+/hardhat_node/
+
+# Hardhat artifacts
+/artifacts/
+/typechain/
+
+# Hardhat cache
+/cache/
+
+# Hardhat typechain
+typechain-types/
+
+# Hardhat gas reporter
+gas-report.txt
+
+# Hardhat network
+.hardhat/
+
+# Hardhat config
+hardhat.config.*
+
+# Hardhat network
+hardhat-network/
+
+# Hardhat node
+hardhat_node/
+
+# Hardhat artifacts
+artifacts/
+typechain/
+
+# Hardhat cache
+cache/
+
+# Hardhat typechain
+typechain-types/
+
+# Hardhat gas reporter
+gas-report.txt
+
+# Hardhat network
+.hardhat/
+
+# Hardhat config
+hardhat.config.*
+
+# Hardhat network
+hardhat-network/
+
+# Hardhat node
+hardhat_node/
+
+# Hardhat artifacts
+artifacts/
+typechain/
+
+# Hardhat cache
+cache/
+
+# Hardhat typechain
+typechain-types/
+
+# Hardhat gas reporter
+gas-report.txt
+
+# Hardhat network
+.hardhat/
+
+# Hardhat config
+hardhat.config.*
+
+# Hardhat network
+hardhat-network/
+
+# Hardhat node
+hardhat_node/
+
+# Hardhat artifacts
+artifacts/
+typechain/
+
+# Hardhat cache
+cache/
+
+# Hardhat typechain
+typechain-types/
+
+# Hardhat gas reporter
+gas-report.txt
