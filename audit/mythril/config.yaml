@@ -1,0 +1,86 @@
+# Mythril Configuration for GameDin L3 Smart Contracts
+
+# General settings
+rpc: null
+rpc_host: localhost
+rpc_port: 8545
+rpc_ssl: false
+rpc_path: / 
+rpc_infura_id: ""
+rpc_infura_network: "mainnet"
+rpc_infura_ws: false
+rpc_infura_ws_network: "mainnet"
+rpc_ganache: false
+rpc_ganache_port: 8545
+rpc_ganache_host: "127.0.0.1"
+
+# Solidity compiler settings
+solc: "solc"
+solc_args: "--evm-version istanbul"
+solc_json: "remappings.txt"
+solc_remappings:
+  - "@openzeppelin/contracts/=node_modules/@openzeppelin/contracts/"
+  - "@openzeppelin/contracts-upgradeable/=node_modules/@openzeppelin/contracts-upgradeable/"
+  - "@chainlink/contracts/=node_modules/@chainlink/contracts/"
+  - "@uniswap/=node_modules/@uniswap/"
+
+# Analysis settings
+tx_count: 2
+execution_timeout: 10000
+create_timeout: 10
+loop_bound: 3
+depth_limit: 12
+global_depth_limit: 12
+max_transaction_count: 4
+strategy: "dfs"
+max_depth: 12
+parallel_solving: true
+solver_timeout: 10000
+call_depth_limit: 3
+disallow_dirty: true
+enable_online_solver: true
+solver_log: "z3.log"
+
+# Output settings
+verbose_report: true
+json: "mythril-report.json"
+markdown_root: "audit/reports/mythril"
+
+# Detection modules
+disabled_detectors:
+  - "delegatecall-loop"
+  - "multiple-sends"
+  - "suicidal"
+  - "unchecked-send"
+  - "unused-return"
+  - "reentrancy-benign"
+  - "reentrancy-no-eth"
+
+# Transaction settings
+tx_origin: "0x0000000000000000000000000000000000000000"
+tx_sender: "0x0000000000000000000000000000000000000000"
+tx_value: 0
+tx_data: ""
+tx_gas: 1000000
+tx_gas_price: 0
+tx_nonce: 0
+
+# Debug settings
+debug: false
+verbose_rpc: false
+log_file: "mythril.log"
+log_level: "info"
+
+# Analysis modes
+analysis_mode: "full"
+create_constructor_args: false
+disassemble: false
+find_external_calls: false
+list_detectors: false
+list_swc: false
+
+# Transaction sequence
+transaction_sequence: ""
+transaction_sequence_file: ""
+transaction_sequence_format: "json"
+transaction_sequence_count: 10

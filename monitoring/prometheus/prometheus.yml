@@ -1,0 +1,48 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  scrape_timeout: 10s
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+          # - alertmanager:9093
+
+rule_files:
+  # - 'alert.rules'
+  # - 'record.rules'
+
+scrape_configs:
+  # Scrape Prometheus itself
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # Scrape Node Exporter
+  - job_name: 'node'
+    static_configs:
+      - targets: ['node-exporter:9100']
+
+  # Scrape cAdvisor
+  - job_name: 'cadvisor'
+    static_configs:
+      - targets: ['cadvisor:8080']
+
+  # Scrape application metrics
+  - job_name: 'gamedin-l3'
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['host.docker.internal:3001']
+        labels:
+          environment: 'development'
+          service: 'gamedin-l3'
+
+  # Scrape Ethereum nodes (if applicable)
+  - job_name: 'ethereum'
+    metrics_path: '/debug/metrics/prometheus'
+    static_configs:
+      - targets: ['host.docker.internal:6060']
+        labels:
+          network: 'hardhat'
+          environment: 'development'

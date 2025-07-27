@@ -1,0 +1,121 @@
+# Echidna Configuration for GameDin L3 Smart Contracts
+
+testMode: assertion
+testLimit: 50000
+timeout: 0
+contracts: "../contracts"
+solc: "solc"
+solc_args: ["--evm-version", "istanbul"]
+solc_remappings:
+  - "@openzeppelin/contracts/=node_modules/@openzeppelin/contracts/"
+  - "@openzeppelin/contracts-upgradeable/=node_modules/@openzeppelin/contracts-upgradeable/"
+  - "@chainlink/contracts/=node_modules/@chainlink/contracts/"
+  - "@uniswap/=node_modules/@uniswap/"
+
+# Test configuration
+test:
+  all: true
+  view: true
+  internal: true
+  constructor: true
+  fallback: true
+  events: true
+  state: true
+  modifiers: true
+  inheritance: true
+  libraries: true
+  interfaces: true
+  structs: true
+  enums: true
+  constants: true
+  mappings: true
+  arrays: true
+  strings: true
+  bytes: true
+  address: true
+  uint: true
+  int: true
+  bool: true
+  bytes32: true
+  string: true
+  address_payable: true
+  contract: true
+  function: true
+  modifier: true
+  event: true
+  error: true
+  using: true
+  import: true
+  pragma: true
+  license: true
+  version: true
+  abi: true
+  asm: true
+  assembly: true
+  break: true
+  case: true
+  catch: true
+  constant: true
+  continue: true
+  default: true
+  do: true
+  else: true
+  emit: true
+  for: true
+  if: true
+  immutable: true
+  in: true
+  index: true
+  indexed: true
+  interface: true
+  internal: true
+  is: true
+  library: true
+  mapping: true
+  memory: true
+  new: true
+  override: true
+  package: true
+  payable: true
+  private: true
+  public: true
+  pure: true
+  return: true
+  returns: true
+  storage: true
+  struct: true
+  try: true
+  type: true
+  unchecked: true
+  using: true
+  var: true
+  view: true
+  while: true
+
+# Fuzzing configuration
+fuzzing:
+  testLimit: 50000
+  runLimit: 1000
+  shrinkLimit: 1000
+  testCaseLimit: 1000
+  workers: 4
+  seqLen: 100
+  maxTests: 1000
+  maxFuncs: 100
+  maxTxs: 100
+  maxBlocks: 100
+  maxAddrs: 100
+  maxBalance: 1000000000000000000000000
+  maxTimestamp: 1000000000
+  maxBlockNumber: 1000000
+  maxGasLimit: 10000000
+  maxTxGasLimit: 1000000
+  maxGasPrice: 1000000000
+  maxValue: 1000000000000000000
+  maxNonce: 100
+  maxChainId: 100
+  maxFrom: 100
+  maxTo: 100
+  maxInput: 1000
+  maxOutput: 1000
+  maxGas: 1000000

@@ -1,0 +1,224 @@
+# Default values for kube-prometheus-stack
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# -- Provide a name in place of kube-prometheus-stack for `app:` labels
+nameOverride: ""
+# -- Provide a name to substitute for the full names of resources
+fullnameOverride: ""
+
+# -- Labels to apply to all resources
+commonLabels: {}
+# -- Annotations to apply to all resources
+commonAnnotations: {}
+
+# -- Create default rules for monitoring the cluster
+defaultRules:
+  create: true
+  rules:
+    alertmanager: true
+    etcd: true
+    configReloaders: true
+    general: true
+    k8s: true
+    kubeApiserver: true
+    kubeApiserverAvailability: true
+    kubeApiserverSlos: true
+    kubelet: true
+    kubeProxy: true
+    kubePrometheusGeneral: true
+    kubePrometheusNodeAlerting: true
+    kubePrometheusNodeRecording: true
+    kubernetesAbsent: true
+    kubernetesApps: true
+    kubernetesResources: true
+    kubernetesStorage: true
+    kubernetesSystem: true
+    kubeScheduler: true
+    kubeStateMetrics: true
+    network: true
+    node: true
+    prometheus: true
+    prometheusOperator: true
+    time: true
+
+# -- Configuration for alertmanager
+alertmanager:
+  enabled: ${enable_alertmanager}
+  service:
+    type: LoadBalancer
+    port: 9093
+  ingress:
+    enabled: true
+    className: "nginx"
+    hosts:
+      - alertmanager.${domain_name}
+    tls: []
+  config:
+    global:
+      resolve_timeout: 5m
+    route:
+      group_by: ['job']
+      group_wait: 30s
+      group_interval: 5m
+      repeat_interval: 12h
+      receiver: 'null'
+      routes:
+      - match:
+          alertname: Watchdog
+        receiver: 'null'
+      - match:
+          severity: critical
+        receiver: 'critical'
+    receivers:
+    - name: 'null'
+    - name: 'critical'
+      webhook_configs:
+      - url: '${alertmanager_slack_webhook}'
+        send_resolved: true
+      email_configs:
+      - to: ${alertmanager_email}
+        send_resolved: true
+
+# -- Configuration for prometheus-node-exporter
+prometheus-node-exporter:
+  enabled: true
+  service:
+    port: 9100
+    targetPort: 9100
+  podAnnotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "9100"
+
+# -- Configuration for kube-state-metrics
+kube-state-metrics:
+  enabled: true
+  selfMonitor:
+    enabled: true
+  prometheus:
+    monitor:
+      enabled: true
+  serviceMonitor:
+    selfMonitor: true
+
+# -- Configuration for prometheus-operator
+prometheusOperator:
+  enabled: true
+  image:
+    repository: quay.io/prometheus-operator/prometheus-operator
+    tag: v0.59.1
+  serviceMonitor:
+    selfMonitor: true
+  admissionWebhooks:
+    enabled: true
+    failurePolicy: Ignore
+    patch:
+      enabled: true
+      image:
+        repository: jettech/kube-webhook-certgen
+        tag: v1.5.0
+  tlsProxy:
+    enabled: true
+    image:
+      repository: squareup/ghostunnel
+      tag: v1.5.3
+
+# -- Configuration for prometheus
+prometheus:
+  enabled: true
+  service:
+    type: LoadBalancer
+    port: 9090
+  ingress:
+    enabled: true
+    className: "nginx"
+    hosts:
+      - prometheus.${domain_name}
+    tls: []
+  prometheusSpec:
+    retention: ${prometheus_retention}
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: ${storage_class}
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: ${prometheus_storage_size}
+    serviceMonitorSelectorNilUsesHelmValues: false
+    serviceMonitorSelector: {}
+    serviceMonitorNamespaceSelector: {}
+    podMonitorSelectorNilUsesHelmValues: false
+    podMonitorSelector: {}
+    podMonitorNamespaceSelector: {}
+    ruleSelectorNilUsesHelmValues: false
+    ruleSelector: {}
+    ruleNamespaceSelector: {}
+    probeSelectorNilUsesHelmValues: false
+    probeSelector: {}
+    probeNamespaceSelector: {}
+
+# -- Configuration for grafana
+grafana:
+  enabled: true
+  service:
+    type: LoadBalancer
+    port: 3000
+  ingress:
+    enabled: true
+    className: "nginx"
+    hosts:
+      - grafana.${domain_name}
+    tls: []
+  adminPassword: "${grafana_admin_password}"
+  persistence:
+    enabled: true
+    storageClassName: ${storage_class}
+    size: 10Gi
+  sidecar:
+    dashboards:
+      enabled: true
+      label: grafana_dashboard
+    datasources:
+      enabled: true
+      defaultDatasourceEnabled: true
+  dashboardProviders:
+    dashboardproviders.yaml:
+      apiVersion: 1
+      providers:
+      - name: 'default'
+        orgId: 1
+        folder: ''
+        type: file
+        disableDeletion: false
+        editable: true
+        options:
+          path: /var/lib/grafana/dashboards/default
+  dashboardsConfigMaps:
+    default: grafana-dashboards
+  dashboards:
+    default:
+      kubernetes-cluster:
+        gnetId: 315
+        revision: 1
+        datasource: Prometheus
+      kubernetes-cluster-monitoring-via-prometheus:
+        gnetId: 315
+        revision: 1
+        datasource: Prometheus
+      kubernetes-deployment-statefulset-daemonset:
+        gnetId: 8588
+        revision: 2
+        datasource: Prometheus
+      kubernetes-cluster-health:
+        gnetId: 8685
+        revision: 1
+        datasource: Prometheus
+      kubernetes-capacity-planning:
+        gnetId: 12006
+        revision: 1
+        datasource: Prometheus
+      kubernetes-resource-requests:
+        gnetId: 12007
+        revision: 1
+        datasource: Prometheus

@@ -1,0 +1,27 @@
+# Default owners for everything in the repo
+* @your-github-username
+
+# Smart Contracts
+/contracts/ @solidity-devs
+
+# Frontend
+gdi-dapp/ @frontend-devs
+
+# Infrastructure
+/terraform/ @devops-team
+
+# Documentation
+/docs/ @docs-team
+
+# Tests
+/test/ @qa-team
+/cypress/ @qa-team
+
+# Configuration files
+*.json @devops-team
+*.yaml @devops-team
+*.yml @devops-team
+*.tf @devops-team
+
+# GitHub Actions
+.github/ @devops-team

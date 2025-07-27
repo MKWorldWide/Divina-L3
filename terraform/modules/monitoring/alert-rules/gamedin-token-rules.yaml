@@ -1,0 +1,52 @@
+groups:
+- name: gamedin-token
+  rules:
+  - alert: HighTokenTransferRate
+    expr: rate(token_transfers_total{contract_address=~"$token_contract"}[5m]) > 1000
+    for: 5m
+    labels:
+      severity: warning
+      service: gamedin-token
+    annotations:
+      summary: "High token transfer rate ({{ $value }} transfers/s)"
+      description: "The token transfer rate is unusually high"
+
+  - alert: LargeTokenTransfer
+    expr: token_transfer_amount{contract_address=~"$token_contract"} > 1000000
+    for: 1m
+    labels:
+      severity: warning
+      service: gamedin-token
+    annotations:
+      summary: "Large token transfer detected ({{ $value }} tokens)"
+      description: "A large token transfer was detected"
+
+  - alert: TokenSupplyAnomaly
+    expr: abs(delta(token_total_supply{contract_address=~"$token_contract"}[1h])) > token_total_supply{contract_address=~"$token_contract"} * 0.1
+    for: 15m
+    labels:
+      severity: critical
+      service: gamedin-token
+    annotations:
+      summary: "Token supply anomaly detected ({{ $value }}% change)"
+      description: "The token supply has changed by more than 10% in the last hour"
+
+  - alert: NoTokenTransfers
+    expr: rate(token_transfers_total{contract_address=~"$token_contract"}[15m]) == 0
+    for: 1h
+    labels:
+      severity: warning
+      service: gamedin-token
+    annotations:
+      summary: "No token transfers in the last hour"
+      description: "No token transfers have been detected for 1 hour"
+
+  - alert: TokenHolderAnomaly
+    expr: abs(delta(token_holders_count{contract_address=~"$token_contract"}[1h])) > token_holders_count{contract_address=~"$token_contract"} * 0.05
+    for: 30m
+    labels:
+      severity: warning
+      service: gamedin-token
+    annotations:
+      summary: "Token holder count anomaly ({{ $value }}% change)"
+      description: "The number of token holders has changed by more than 5% in the last hour"

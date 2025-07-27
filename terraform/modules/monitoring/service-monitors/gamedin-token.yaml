@@ -1,0 +1,39 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: gamedin-token
+  namespace: ${namespace}
+  labels:
+    app: gamedin-token
+    release: prometheus-stack
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: gamedin-token
+  namespaceSelector:
+    any: true
+  endpoints:
+  - port: metrics
+    interval: 15s
+    path: /metrics
+    relabelings:
+    - sourceLabels: [__meta_kubernetes_service_label_app_kubernetes_io_name]
+      targetLabel: application
+    - action: labelmap
+      regex: __meta_kubernetes_service_label_(.+)
+  - port: health
+    interval: 15s
+    path: /health
+    relabelings:
+    - sourceLabels: [__meta_kubernetes_service_label_app_kubernetes_io_name]
+      targetLabel: application
+    - action: labelmap
+      regex: __meta_kubernetes_service_label_(.+)
+  - port: metrics
+    interval: 15s
+    path: /debug/metrics/prometheus
+    relabelings:
+    - sourceLabels: [__meta_kubernetes_service_label_app_kubernetes_io_name]
+      targetLabel: application
+    - action: labelmap
+      regex: __meta_kubernetes_service_label_(.+)

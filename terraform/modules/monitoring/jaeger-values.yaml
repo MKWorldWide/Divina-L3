@@ -1,0 +1,220 @@
+# Jaeger Operator Helm chart values
+operator:
+  enabled: true
+  image:
+    repository: jaegertracing/jaeger-operator
+    tag: 1.43.0
+    pullPolicy: IfNotPresent
+  serviceAccount:
+    create: true
+    name: jaeger-operator
+  rbac:
+    create: true
+    clusterRole: true
+    clusterRoleBinding: true
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+
+# Jaeger instance configuration
+jaeger:
+  create: true
+  name: gamedin-tracing
+  spec:
+    strategy: production
+    agent:
+      strategy: DaemonSet
+      resources:
+        limits:
+          cpu: 500m
+          memory: 512Mi
+        requests:
+          cpu: 100m
+          memory: 128Mi
+    collector:
+      replicas: 2
+      resources:
+        limits:
+          cpu: 1000m
+          memory: 2Gi
+        requests:
+          cpu: 200m
+          memory: 512Mi
+      autoscaling:
+        enabled: true
+        minReplicas: 2
+        maxReplicas: 5
+        targetCPUUtilization: 80
+    query:
+      replicas: 2
+      resources:
+        limits:
+          cpu: 500m
+          memory: 1Gi
+        requests:
+          cpu: 100m
+          memory: 256Mi
+    storage:
+      type: elasticsearch
+      options:
+        es:
+          server-urls: http://elasticsearch-master:9200
+          username: elastic
+          password: ${ELASTICSEARCH_PASSWORD}
+          tls:
+            enabled: false
+    volumeMounts:
+      - name: data
+        mountPath: /data
+        readOnly: false
+    volumes:
+      - name: data
+        emptyDir: {}
+
+# Ingress configuration
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+  hosts:
+    - host: jaeger.${DOMAIN}
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - hosts:
+        - jaeger.${DOMAIN}
+      secretName: jaeger-tls
+
+# Service configuration
+service:
+  type: ClusterIP
+  ports:
+    - name: http-query
+      port: 16686
+      targetPort: 16686
+      protocol: TCP
+    - name: http-admin
+      port: 14269
+      targetPort: 14269
+      protocol: TCP
+    - name: http-collector
+      port: 14268
+      targetPort: 14268
+      protocol: TCP
+    - name: zipkin
+      port: 9411
+      targetPort: 9411
+      protocol: TCP
+
+# Resource limits and requests
+resources:
+  limits:
+    cpu: 1000m
+    memory: 1Gi
+  requests:
+    cpu: 100m
+    memory: 256Mi
+
+# Affinity and tolerations for node assignment
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+# Pod security context
+securityContext:
+  fsGroup: 1000
+  runAsUser: 1000
+  runAsNonRoot: true
+
+# Service account
+serviceAccount:
+  create: true
+  name: jaeger
+  annotations: {}
+
+# Pod annotations
+podAnnotations: {}
+
+# Pod security context
+podSecurityContext:
+  fsGroup: 1000
+  runAsUser: 1000
+  runAsNonRoot: true
+
+# Priority class name
+priorityClassName: ""
+
+# Liveness and readiness probes
+livenessProbe:
+  httpGet:
+    path: /
+    port: http-query
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 3
+
+readinessProbe:
+  httpGet:
+    path: /
+    port: http-query
+  initialDelaySeconds: 5
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 3
+
+# Extra environment variables
+extraEnv: []
+
+# Extra volumes
+extraVolumes: []
+
+# Extra volume mounts
+extraVolumeMounts: []
+
+# Extra containers
+extraContainers: []
+
+# Extra init containers
+extraInitContainers: []
+
+# Service monitor for Prometheus
+serviceMonitor:
+  enabled: true
+  namespace: monitoring
+  interval: 15s
+  scrapeTimeout: 10s
+  additionalLabels: {}
+  metricRelabelings: []
+  relabelings: []
+
+# Pod disruption budget
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+  maxUnavailable: 1
+
+# Network policy
+networkPolicy:
+  enabled: true
+  allowExternal: true
+  allowEgress: true
+  additionalIngress: []
+  additionalEgress: []
+
+# Pod security policy
+podSecurityPolicy:
+  enabled: false
+  name: jaeger
+  annotations: {}
+  spec: {}
+
+# Extra objects to create
+extraObjects: []

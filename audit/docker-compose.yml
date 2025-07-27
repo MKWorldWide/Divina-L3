@@ -1,0 +1,126 @@
+version: '3.8'
+
+services:
+  audit:
+    build:
+      context: ../..
+      dockerfile: audit/docker/Dockerfile
+    container_name: gamedin-audit
+    working_dir: /home/auditor/project
+    volumes:
+      - ../../:/home/auditor/project
+      - ~/.ethereum:/home/auditor/.ethereum
+      - ~/.brownie:/home/auditor/.brownie
+      - ~/.cache/solc-select:/home/auditor/.solc-select
+      - ~/.foundry:/home/auditor/.foundry
+      - ~/.local/share/echidna:/home/auditor/.local/share/echidna
+    environment:
+      - NODE_ENV=development
+      - SOLC_VERSION=0.8.20
+      - FOUNDRY_PROFILE=default
+      - PATH=/home/auditor/.foundry/bin:/home/auditor/.cargo/bin:/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+    tty: true
+    stdin_open: true
+    privileged: true
+    security_opt:
+      - seccomp:unconfined
+    cap_add:
+      - SYS_PTRACE
+    deploy:
+      resources:
+        limits:
+          cpus: '4'
+          memory: 8G
+
+  ganache:
+    image: trufflesuite/ganache-cli:latest
+    container_name: gamedin-ganache
+    ports:
+      - "8545:8545"
+    command: >
+      --deterministic
+      --accounts=20
+      --gasLimit=0x1fffffffffffff
+      --allowUnlimitedContractSize
+      --defaultBalanceEther=1000000
+      --mnemonic="myth like bonus scare over problem client lizard pioneer submit female collect"
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+
+  hardhat-node:
+    image: nomiclabs/hardhat-node:latest
+    container_name: gamedin-hardhat-node
+    ports:
+      - "8546:8545"
+    volumes:
+      - ../../:/home/node/project
+    working_dir: /home/node/project
+    command: npx hardhat node --hostname 0.0.0.0 --port 8545
+    environment:
+      - NODE_OPTIONS=--max-old-space-size=4096
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 4G
+
+  slither:
+    build:
+      context: ../..
+      dockerfile: audit/docker/Dockerfile
+    container_name: gamedin-slither
+    working_dir: /home/auditor/project
+    volumes:
+      - ../../:/home/auditor/project
+    command: slither . --exclude-dependencies --filter-paths "node_modules|test|script"
+    deploy:
+      resources:
+        limits:
+          cpus: '4'
+          memory: 8G
+
+  mythril:
+    build:
+      context: ../..
+      dockerfile: audit/docker/Dockerfile
+    container_name: gamedin-mythril
+    working_dir: /home/auditor/project
+    volumes:
+      - ../../:/home/auditor/project
+    command: >
+      bash -c "find contracts -name '*.sol' | xargs -I {} myth analyze {}
+      --solc-json remappings.txt
+      --max-depth 10
+      --execution-timeout 600
+      --solver-timeout 60000
+      --create-timeout 600
+      --parallel-solving"
+    deploy:
+      resources:
+        limits:
+          cpus: '4'
+          memory: 8G
+
+  echidna:
+    build:
+      context: ../..
+      dockerfile: audit/docker/Dockerfile
+    container_name: gamedin-echidna
+    working_dir: /home/auditor/project
+    volumes:
+      - ../../:/home/auditor/project
+    command: >
+      bash -c "cd audit/echidna && 
+      echidna-test . --config config.yaml"
+    deploy:
+      resources:
+        limits:
+          cpus: '4'
+          memory: 8G
+
+networks:
+  default:
+    name: gamedin-audit-network

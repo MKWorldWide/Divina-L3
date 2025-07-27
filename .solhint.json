@@ -1,0 +1,105 @@
+{
+  "extends": "solhint:recommended",
+  "plugins": ["prettier"],
+  "rules": {
+    // Error rules
+    "compiler-version": ["error", "^0.8.0"],
+    "avoid-sha3": "error",
+    "avoid-suicide": "error",
+    "avoid-throw": "error",
+    "avoid-tx-origin": "error",
+    "code-complexity": ["error", 7],
+    "compiler-fixed": "error",
+    "compiler-gt-0_8": "error",
+    "func-param-name-mixedcase": "error",
+    "mark-callable-contracts": "error",
+    "no-complex-fallback": "error",
+    "no-inline-assembly": "warn",
+    "not-rely-on-block-hash": "error",
+    "not-rely-on-time": "error",
+    "reason-string": ["error", {"maxLength": 32}],
+    "reentrancy": "error",
+    "state-visibility": ["error", "ignore-constructors"],
+    "visibility-modifier-order": "error",
+    
+    // Best practices
+    "constructor-syntax": "warn",
+    "event-name-camelcase": "warn",
+    "func-name-mixedcase": "warn",
+    "func-param-name-mixedcase": "warn",
+    "mark-callable-contracts": "warn",
+    "multiple-sends": "warn",
+    "no-empty-blocks": "warn",
+    "no-unused-vars": "warn",
+    "payable-fallback": "warn",
+    "quotes": ["error", "double"],
+    "reason-string": ["warn", {"maxLength": 32}],
+    "reentrancy": "warn",
+    "state-visibility": ["warn", "ignore-constructors"],
+    "var-name-mixedcase": "warn",
+    "visibility-modifier-order": "warn",
+    
+    // Style guide
+    "bracket-align": "warn",
+    "const-name-snakecase": "warn",
+    "contract-name-camelcase": "warn",
+    "event-name-camelcase": ["warn", {"strict": true}],
+    "func-name-mixedcase": ["warn", {"strict": true}],
+    "func-param-name-mixedcase": ["warn", {"strict": true}],
+    "indent": ["warn", 4],
+    "max-line-length": ["warn", 120],
+    "modifier-name-mixedcase": "warn",
+    "no-console": "off",
+    "no-global-import": "warn",
+    "no-unused-vars": "warn",
+    "quotes": ["warn", "double"],
+    "reason-string": ["warn", {"maxLength": 32}],
+    "var-name-mixedcase": ["warn", {"strict": true}],
+    
+    // Security
+    "avoid-call-value": "error",
+    "avoid-low-level-calls": "error",
+    "avoid-sha3": "error",
+    "avoid-suicide": "error",
+    "avoid-throw": "error",
+    "avoid-tx-origin": "error",
+    "check-send-result": "error",
+    "compiler-version": ["error", "^0.8.0"],
+    "compiler-fixed": "error",
+    "compiler-gt-0_8": "error",
+    "compiler-version": ["error", "^0.8.0"],
+    "func-visibility": ["error", {"ignoreConstructors": true}],
+    "mark-callable-contracts": "error",
+    "no-complex-fallback": "error",
+    "no-inline-assembly": "error",
+    "not-rely-on-block-hash": "error",
+    "not-rely-on-time": "error",
+    "reentrancy": "error",
+    "state-visibility": ["error", "ignore-constructors"],
+    "visibility-modifier-order": "error",
+    
+    // Custom rules for GameDin L3
+    "gamedin/custom-errors": "error",
+    "gamedin/events-for-state-changes": "warn",
+    "gamedin/upgradeable-contracts": "warn"
+  },
+  "plugins": ["prettier"],
+  "settings": {
+    "prettier": {
+      "singleQuote": false,
+      "printWidth": 120,
+      "tabWidth": 4,
+      "useTabs": false,
+      "semi": true,
+      "bracketSpacing": true,
+      "overrides": [
+        {
+          "files": "*.sol",
+          "options": {
+            "parser": "solidity-parse"
+          }
+        }
+      ]
+    }
+  }
+}

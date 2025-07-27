@@ -1,0 +1,102 @@
+# Manticore Configuration for GameDin L3 Smart Contracts
+
+# General settings
+workspace: "mcore"
+contract: ""
+bytecode: ""
+bin_runtime: false
+tx_sender: ""
+tx_origin: ""
+tx_value: 0
+tx_gas: 1000000
+tx_gas_price: 0
+tx_data: ""
+tx_nonce: 0
+
+# Solidity compiler settings
+solc: "solc"
+solc_args: ["--evm-version", "istanbul"]
+solc_remappings:
+  - "@openzeppelin/contracts/=node_modules/@openzeppelin/contracts/"
+  - "@openzeppelin/contracts-upgradeable/=node_modules/@openzeppelin/contracts-upgradeable/"
+  - "@chainlink/contracts/=node_modules/@chainlink/contracts/"
+  - "@uniswap/=node_modules/@uniswap/"
+
+# Analysis settings
+txlimit: 10
+timeout: 3600
+verbose: 10
+workspace_dir: "mcore"
+txnoether: false
+avoid_constant: false
+contract_instances: 1
+min_balance: 1
+max_balance: 1000000000000000000
+min_timestamp: 1
+max_timestamp: 1000000000
+min_block_number: 1
+max_block_number: 1000000
+min_gas_limit: 1000000
+max_gas_limit: 10000000
+min_tx_gas_limit: 1000000
+max_tx_gas_limit: 1000000
+min_gas_price: 0
+max_gas_price: 1000000000
+min_value: 0
+max_value: 1000000000000000000
+min_nonce: 0
+max_nonce: 100
+min_chain_id: 1
+max_chain_id: 100
+min_from: "0x0000000000000000000000000000000000000000"
+max_from: "0xffffffffffffffffffffffffffffffffffffffff"
+min_to: "0x0000000000000000000000000000000000000000"
+max_to: "0xffffffffffffffffffffffffffffffffffffffff"
+min_input: ""
+max_input: ""
+min_output: ""
+max_output: ""
+min_gas: 1000000
+max_gas: 1000000
+min_gas_price: 0
+max_gas_price: 1000000000
+min_value: 0
+max_value: 1000000000000000000
+min_nonce: 0
+max_nonce: 100
+min_chain_id: 1
+max_chain_id: 100
+min_from: "0x0000000000000000000000000000000000000000"
+max_from: "0xffffffffffffffffffffffffffffffffffffffff"
+min_to: "0x0000000000000000000000000000000000000000"
+max_to: "0xffffffffffffffffffffffffffffffffffffffff"
+min_input: ""
+max_input: ""
+min_output: ""
+max_output: ""
+min_gas: 1000000
+max_gas: 1000000
+
+# Output settings
+json: "manticore-report.json"
+markdown_root: "audit/reports/manticore"
+
+# Debug settings
+debug: false
+verbose: 0
+log_file: "manticore.log"
+log_level: "info"
+
+# Analysis modes
+analysis_mode: "full"
+create_constructor_args: false
+disassemble: false
+find_external_calls: false
+list_detectors: false
+list_swc: false
+
+# Transaction sequence
+transaction_sequence: ""
+transaction_sequence_file: ""
+transaction_sequence_format: "json"
+transaction_sequence_count: 10

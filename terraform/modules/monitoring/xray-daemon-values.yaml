@@ -1,0 +1,157 @@
+# X-Ray Daemon Helm chart values
+image:
+  repository: amazon/aws-xray-daemon
+  tag: latest
+  pullPolicy: IfNotPresent
+  pullSecrets: []
+
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+podAnnotations: {}
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+service:
+  type: ClusterIP
+  port: 2000
+  targetPort: 2000
+  annotations: {}
+
+resources:
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  limits:
+    cpu: 100m
+    memory: 128Mi
+  requests:
+    cpu: 10m
+    memory: 32Mi
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 5
+  targetCPUUtilizationPercentage: 80
+  # targetMemoryUtilizationPercentage: 80
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+# X-Ray Daemon Configuration
+config:
+  # X-Ray Daemon configuration file
+  xray:
+    # Maximum buffer size in MB (minimum 3). The daemon buffers segments in memory and sends to X-Ray in batches of this size.
+    TotalBufferSizeMB: 10
+    # Maximum queue size in MB. The daemon queues up to this amount of data before dropping segments.
+    Concurrency: 8
+    # Region to send segments to. If not specified, the daemon will try to infer the region from the EC2 instance metadata.
+    Region: ${AWS_REGION}
+    # Socket configuration for receiving trace data
+    Socket:
+      # Address and port on which to listen for UDP packets containing segment documents.
+      UDPAddress: "0.0.0.0:2000"
+      # TCP address and port on which to listen for HTTP requests to get trace data in JSON.
+      TCPAddress: "0.0.0.0:2000"
+    # Local mode configuration
+    LocalMode: true
+    # Logging configuration
+    Logging:
+      LogRotation: true
+      LogLevel: "info"
+      LogPath: "/var/log/xray/"
+    # Resource ARNs to include in segments
+    ResourceARN: ""
+    # IAM role ARN to use for sending segments to X-Ray
+    RoleARN: ""
+    # Version of the daemon
+    Version: "1.0"
+    # Maximum number of concurrent calls to AWS to upload segment documents.
+    MaxConcurrentCalls: 8
+    # Maximum number of retries for a failed request.
+    MaxRetries: 3
+    # Maximum number of segments that can be held in the buffer.
+    MaxSegmentSize: 100
+    # Maximum number of segments that can be held in the queue.
+    MaxQueueSize: 1000
+    # Enable/disable the daemon to send segments to the X-Ray service.
+    NoVerifySSL: false
+    # Enable/disable the daemon to send segments to the X-Ray service.
+    DaemonAddress: "xray.${AWS_REGION}.amazonaws.com"
+    # Enable/disable the daemon to send segments to the X-Ray service.
+    Endpoint: ""
+
+# Environment variables to pass to the X-Ray Daemon
+env:
+  - name: AWS_REGION
+    value: ${AWS_REGION}
+  - name: AWS_ACCESS_KEY_ID
+    value: ${AWS_ACCESS_KEY_ID}
+  - name: AWS_SECRET_ACCESS_KEY
+    value: ${AWS_SECRET_ACCESS_KEY}
+  - name: AWS_SESSION_TOKEN
+    value: ${AWS_SESSION_TOKEN}
+
+# Volume mounts for the X-Ray Daemon
+volumeMounts: []
+
+# Volumes for the X-Ray Daemon
+volumes: []
+
+# Service monitor for Prometheus
+serviceMonitor:
+  enabled: true
+  namespace: monitoring
+  interval: 15s
+  scrapeTimeout: 10s
+  additionalLabels: {}
+  metricRelabelings: []
+  relabelings: []
+
+# Pod disruption budget
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+  maxUnavailable: 1
+
+# Network policy
+networkPolicy:
+  enabled: true
+  allowExternal: true
+  allowEgress: true
+  additionalIngress: []
+  additionalEgress: []
+
+# Pod security policy
+podSecurityPolicy:
+  enabled: false
+  name: xray-daemon
+  annotations: {}
+  spec: {}
+
+# Extra objects to create
+extraObjects: []

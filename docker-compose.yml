@@ -1,0 +1,108 @@
+version: '3.8'
+
+services:
+  # Hardhat Network
+  hardhat-node:
+    image: ethereumoptimism/hardhat-node:latest
+    container_name: hardhat-node
+    ports:
+      - '8545:8545'
+      - '8546:8546'  # WebSocket
+    environment:
+      - CHAIN_ID=31337
+      - FORK_URL=${FORK_URL:-}
+      - FORK_BLOCK_NUMBER=${FORK_BLOCK_NUMBER:-}
+    volumes:
+      - ./contracts:/app/contracts
+      - ./deploy:/app/deploy
+      - ./artifacts:/app/artifacts
+      - ./cache:/app/cache
+    networks:
+      - gamedin-network
+
+  # Frontend Application
+  frontend:
+    build:
+      context: ./gdi-dapp
+      dockerfile: Dockerfile
+    container_name: gamedin-frontend
+    ports:
+      - '3000:3000'
+    environment:
+      - NODE_ENV=development
+      - REACT_APP_API_URL=http://localhost:3001
+      - REACT_APP_NETWORK_ID=31337
+      - REACT_APP_CHAIN_ID=31337
+      - REACT_APP_RPC_URL=http://hardhat-node:8545
+    volumes:
+      - ./gdi-dapp:/app
+      - /app/node_modules
+    depends_on:
+      - hardhat-node
+    networks:
+      - gamedin-network
+
+  # Backend API (if applicable)
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: gamedin-backend
+    ports:
+      - '3001:3001'
+    environment:
+      - NODE_ENV=development
+      - PORT=3001
+      - RPC_URL=http://hardhat-node:8545
+      - CHAIN_ID=31337
+      - DATABASE_URL=${DATABASE_URL:-postgres://postgres:postgres@db:5432/gamedin}
+    volumes:
+      - .:/app
+      - /app/node_modules
+    depends_on:
+      - hardhat-node
+      - db
+    networks:
+      - gamedin-network
+
+  # Database
+  db:
+    image: postgres:15-alpine
+    container_name: gamedin-db
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=gamedin
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - gamedin-network
+
+  # Redis (for caching)
+  redis:
+    image: redis:7-alpine
+    container_name: gamedin-redis
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis_data:/data
+    networks:
+      - gamedin-network
+
+  # Monitoring (optional)
+  monitoring:
+    extends:
+      file: ./monitoring/docker-compose.yml
+      service: monitoring
+    networks:
+      - gamedin-network
+
+networks:
+  gamedin-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:

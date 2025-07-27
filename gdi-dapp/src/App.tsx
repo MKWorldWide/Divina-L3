@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { ThemeProvider, createTheme } from '@mui/material/styles';
-import { CssBaseline, Box, CircularProgress } from '@mui/material';
+import { ThemeProvider, createTheme, CssBaseline, Box, Button, Typography, CircularProgress } from '@mui/material';
 import { Web3Provider as EthersWeb3Provider } from '@ethersproject/providers';
 import { ethers } from 'ethers';
-import { Web3AppProvider } from './providers/Web3Provider';
+import { Web3AppProvider } from './providers/Web3AppProvider';
+import { SnackbarProvider } from 'notistack';
 
 // Components
 import Header from './components/Header';
@@ -19,9 +19,10 @@ import Bridge from './pages/Bridge';
 import Analytics from './pages/Analytics';
 
 // Contexts
-import { WalletProvider } from './contexts/WalletContext';
 import { GameProvider } from './contexts/GameContext';
 import { AIProvider } from './contexts/AIContext';
+import { WalletConnectionProvider } from './wallet/WalletConnectionProvider';
+import WalletProviderWrapper from './components/WalletProviderWrapper';
 
 // Services
 import { initializeAIServices } from './services/aiService';
@@ -91,13 +92,29 @@ const theme = createTheme({
 });
 
 // Web3 Provider wrapper
-export function getLibrary(
+const getLibrary = (
   provider: ethers.providers.ExternalProvider | ethers.providers.JsonRpcFetchFunc
-): EthersWeb3Provider {
-  const library = new EthersWeb3Provider(provider);
+): EthersWeb3Provider => {
+  const library = new ethers.providers.Web3Provider(provider);
   library.pollingInterval = 12000;
   return library;
-}
+};
+
+// Custom Snackbar component for notifications
+const SnackbarContainer: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  return (
+    <SnackbarProvider
+      maxSnack={3}
+      anchorOrigin={{
+        vertical: 'top',
+        horizontal: 'right',
+      }}
+      autoHideDuration={5000}
+    >
+      {children}
+    </SnackbarProvider>
+  );
+};
 
 // Loading component
 const LoadingScreen: React.FC = () => (
@@ -117,79 +134,107 @@ const LoadingScreen: React.FC = () => (
 );
 
 // Main App component
-const App: React.FC = () => {
-  const [isLoading, setIsLoading] = useState(true);
+const AppContent: React.FC = () => {
   const [isInitialized, setIsInitialized] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  // Initialize services on app start
+  // Initialize services
   useEffect(() => {
-    const initializeApp = async () => {
+    const initServices = async () => {
       try {
-        console.log('🚀 Initializing GameDin L3 DApp...');
-
-        // Initialize AI services
-        await initializeAIServices();
-        console.log('✅ AI services initialized');
-
-        // Initialize blockchain service with local Hardhat node
-        const providerUrl = 'http://localhost:8545';
-        console.log(`🔗 Connecting to local Hardhat node at ${providerUrl}`);
-        // Create a new ethers.js provider
-        const provider = new ethers.providers.JsonRpcProvider(providerUrl);
-        await initializeBlockchainService(provider);
-        console.log('✅ Blockchain service connected to local Hardhat node');
-
+        // Initialize any required services here
+        // await initializeAIServices();
+        // await initializeBlockchainService();
+        
+        // Simulate loading time
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
         setIsInitialized(true);
-      } catch (error) {
-        console.error('❌ Failed to initialize app:', error);
-        // Continue with app even if some services fail
-        setIsInitialized(true);
-      } finally {
-        setIsLoading(false);
+      } catch (err) {
+        console.error('Failed to initialize services:', err);
+        setError('Failed to initialize required services. Please refresh the page to try again.');
       }
     };
 
-    initializeApp();
+    initServices();
   }, []);
 
-  if (isLoading) {
+  if (!isInitialized) {
     return <LoadingScreen />;
   }
 
+  if (error) {
+    return (
+      <Box
+        display="flex"
+        justifyContent="center"
+        alignItems="center"
+        minHeight="100vh"
+        flexDirection="column"
+        p={3}
+        textAlign="center"
+      >
+        <Typography variant="h5" color="error" gutterBottom>
+          Application Error
+        </Typography>
+        <Typography variant="body1" paragraph>
+          {error}
+        </Typography>
+        <Button
+          variant="contained"
+          color="primary"
+          onClick={() => window.location.reload()}
+          sx={{ mt: 2 }}
+        >
+          Refresh Page
+        </Button>
+      </Box>
+    );
+  }
+
   return (
-    <Web3AppProvider>
-      <ThemeProvider theme={theme}>
-        <CssBaseline />
-        <WalletProvider>
-          <GameProvider>
-            <AIProvider>
-              <Router>
-                <Box className="app-container">
-                  <Header />
-                  <Box className="app-content">
-                    <Sidebar />
-                    <Box className="main-content">
-                      <Routes>
-                        <Route path="/" element={<Navigate to="/dashboard" replace />} />
-                        <Route path="/dashboard" element={<Dashboard />} />
-                        <Route path="/lobby" element={<GameLobby />} />
-                        <Route path="/game/:gameId" element={<GameRoom />} />
-                        <Route path="/profile" element={<Profile />} />
-                        <Route path="/leaderboard" element={<Leaderboard />} />
-                        <Route path="/marketplace" element={<Marketplace />} />
-                        <Route path="/bridge" element={<Bridge />} />
-                        <Route path="/analytics" element={<Analytics />} />
-                      </Routes>
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
+      <SnackbarContainer>
+        <Web3AppProvider getLibrary={getLibrary}>
+          <WalletConnectionProvider>
+            <WalletProviderWrapper>
+              <GameProvider>
+                <AIProvider>
+                  <Router>
+                    <Box sx={{ display: 'flex', minHeight: '100vh' }}>
+                      <Sidebar />
+                      <Box sx={{ flexGrow: 1, overflowX: 'hidden' }}>
+                        <Header />
+                        <Box component="main" sx={{ p: 3 }}>
+                          <Routes>
+                            <Route path="/" element={<Dashboard />} />
+                            <Route path="/lobby" element={<GameLobby />} />
+                            <Route path="/game/:id" element={<GameRoom />} />
+                            <Route path="/profile" element={<Profile />} />
+                            <Route path="/leaderboard" element={<Leaderboard />} />
+                            <Route path="/marketplace" element={<Marketplace />} />
+                            <Route path="/bridge" element={<Bridge />} />
+                            <Route path="/analytics" element={<Analytics />} />
+                            <Route path="*" element={<Navigate to="/" replace />} />
+                          </Routes>
+                        </Box>
+                      </Box>
                     </Box>
-                  </Box>
-                </Box>
-              </Router>
-            </AIProvider>
-          </GameProvider>
-        </WalletProvider>
-      </ThemeProvider>
-    </Web3AppProvider>
+                  </Router>
+                </AIProvider>
+              </GameProvider>
+            </WalletProviderWrapper>
+          </WalletConnectionProvider>
+        </Web3AppProvider>
+      </SnackbarContainer>
+    </ThemeProvider>
   );
+};
+
+// Main App component
+const App: React.FC = () => {
+  return <AppContent />;
 };
 
 export default App;
