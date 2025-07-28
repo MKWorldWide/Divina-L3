@@ -28,7 +28,7 @@ spec:
     spec:
       containers:
       - name: gamedin-dapp
-        image: ${ECR_REGISTRY}/gamedin/staging/dapp:${IMAGE_TAG}
+        image: gamedin-dapp:latest
         imagePullPolicy: Always
         ports:
         - containerPort: 3000

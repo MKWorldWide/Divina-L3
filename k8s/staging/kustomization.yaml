@@ -6,20 +6,22 @@ namespace: staging
 # Include all necessary resources
 resources:
   - namespace.yaml
-  - deployments/gamedin-dapp.yaml
-  - services/gamedin-dapp.yaml
-  - deployments/gamedin-node.yaml
+  - configmaps/gamedin-config.yaml
+  - secrets/gamedin-secrets.yaml
+  - deployment-dapp.yaml
+  - deployment-node.yaml
+  - service-dapp.yaml
   - services/gamedin-node.yaml
   - ingress/gamedin-ingress.yaml
 
 # Configure image overrides
 images:
   - name: gamedin-dapp
-    newName: ${ECR_REGISTRY}/gamedin/staging/dapp
-    newTag: ${IMAGE_TAG:-latest}
+    newName: public.ecr.aws/docker/library/nginx
+    newTag: latest
   - name: gamedin-node
-    newName: ${ECR_REGISTRY}/gamedin/staging/node
-    newTag: ${IMAGE_TAG:-latest}
+    newName: public.ecr.aws/docker/library/nginx
+    newTag: latest
 
 # Add common labels to all resources
 commonLabels:

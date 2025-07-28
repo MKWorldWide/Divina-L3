@@ -1,0 +1,74 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gamedin-dapp
+  namespace: staging
+  labels:
+    app: gamedin-dapp
+    app.kubernetes.io/environment: staging
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/part-of: gamedin
+    env: staging
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: gamedin-dapp
+      app.kubernetes.io/environment: staging
+      app.kubernetes.io/managed-by: kustomize
+      app.kubernetes.io/part-of: gamedin
+      env: staging
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+    type: RollingUpdate
+  template:
+    metadata:
+      annotations:
+        prometheus.io/port: "3000"
+        prometheus.io/scrape: "true"
+      labels:
+        app: gamedin-dapp
+        app.kubernetes.io/environment: staging
+        app.kubernetes.io/managed-by: kustomize
+        app.kubernetes.io/part-of: gamedin
+        env: staging
+    spec:
+      containers:
+      - name: gamedin-dapp
+        image: public.ecr.aws/docker/library/nginx:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 80
+          name: http
+          protocol: TCP
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 80
+            scheme: HTTP
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 1
+          successThreshold: 1
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 80
+            scheme: HTTP
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          timeoutSeconds: 1
+          successThreshold: 1
+          failureThreshold: 3
+        resources:
+          limits:
+            cpu: 500m
+            memory: 1Gi
+          requests:
+            cpu: 100m
+            memory: 256Mi
+      imagePullSecrets:
+      - name: ecr-credentials

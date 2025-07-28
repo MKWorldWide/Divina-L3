@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: gamedin-config
+  namespace: staging
+data:
+  NODE_ENV: "staging"
+  API_URL: "http://gamedin-node:8545"
+  WS_URL: "ws://gamedin-node:8545"
+  CHAIN_ID: "1337"
+  NETWORK_NAME: "gamedin-staging"

@@ -28,7 +28,7 @@ spec:
     spec:
       containers:
       - name: gamedin-node
-        image: ${ECR_REGISTRY}/gamedin/staging/node:${IMAGE_TAG}
+        image: gamedin-node:latest
         imagePullPolicy: Always
         ports:
         - containerPort: 8545

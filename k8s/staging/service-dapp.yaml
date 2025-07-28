@@ -1,0 +1,24 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: gamedin-dapp
+  namespace: staging
+  labels:
+    app: gamedin-dapp
+    app.kubernetes.io/environment: staging
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/part-of: gamedin
+    env: staging
+spec:
+  type: ClusterIP
+  ports:
+  - name: http
+    port: 80
+    protocol: TCP
+    targetPort: http
+  selector:
+    app: gamedin-dapp
+    app.kubernetes.io/environment: staging
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/part-of: gamedin
+    env: staging
