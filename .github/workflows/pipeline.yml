@@ -47,17 +47,19 @@ jobs:
     
     services:
       hardhat-node:
-        image: ethereumoptimism/hardhat-node:latest
+        image: ethereumoptimism/hardhat-node:2.0.0
         ports:
           - 8545:8545
         options: >-
-          --health-cmd "curl http://localhost:8545"
+          --health-cmd "curl -s http://localhost:8545"
           --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
+          --health-timeout 10s
+          --health-retries 10
+          --health-start-period 10s
         env:
-          CHAIN_ID: 31337
-          FORK_URL: ${{ secrets.FORK_URL }}
+          CHAIN_ID: '31337'
+          FORK_URL: ${{ secrets.FORK_URL || 'https://eth-mainnet.alchemyapi.io/v2/demo' }}
+          HARDHAT_NETWORK: 'hardhat'
 
     strategy:
       matrix:
@@ -103,18 +105,30 @@ jobs:
         npm run lint
         npm run format
 
+    - name: Check Hardhat node
+      run: |
+        echo "Checking Hardhat node connection..."
+        curl -s -X POST \
+          -H "Content-Type: application/json" \
+          --data '{"jsonrpc":"2.0","method":"eth_chainId","params":[],"id":1}' \
+          http://localhost:8545 || (echo "Hardhat node not responding" && exit 1)
+        
+        echo "Hardhat node is running"
+        
     - name: Run Unit Tests
       run: |
         echo "Compiling contracts..."
         npx hardhat compile || (echo "Compilation failed" && exit 1)
         
+        echo "Running tests..."
+        npx hardhat test --network hardhat || \
+          (echo "Tests failed" && exit 1)
+        
         echo "Running tests with coverage..."
         npx hardhat coverage --network hardhat || \
           (echo "Coverage failed" && exit 1)
         
-        echo "Running tests..."
-        npx hardhat test --network hardhat || \
-          (echo "Tests failed" && exit 1)
+        echo "All tests completed successfully"
 
     - name: Run Integration Tests
       run: |
