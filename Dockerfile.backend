@@ -1,0 +1,51 @@
+# Use Node.js LTS
+FROM node:20-alpine AS builder
+
+# Set working directory
+WORKDIR /app
+
+# Install dependencies
+COPY package*.json ./
+COPY gdi-dapp/package*.json ./gdi-dapp/
+
+# Install root dependencies
+RUN npm ci --production
+
+# Install gdi-dapp dependencies
+WORKDIR /app/gdi-dapp
+RUN npm ci --production
+
+# Build the application
+WORKDIR /app
+COPY . .
+RUN npm run build
+
+# Production image
+FROM node:20-alpine
+
+# Install system dependencies
+RUN apk add --no-cache tini
+
+# Set working directory
+WORKDIR /app
+
+# Copy built application
+COPY --from=builder /app/package*.json ./
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/dist ./dist
+
+# Copy gdi-dapp build
+COPY --from=builder /app/gdi-dapp/build ./gdi-dapp/build
+
+# Expose ports
+EXPOSE 3001
+
+# Set environment variables
+ENV NODE_ENV=production
+ENV PORT=3001
+
+# Use tini as init process
+ENTRYPOINT ["/sbin/tini", "--"]
+
+# Start the application
+CMD ["node", "dist/index.js"]

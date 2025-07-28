@@ -1,0 +1,304 @@
+name: GameDin L3 Pipeline
+
+on:
+  push:
+    branches: [main, develop, 'feature/**']
+    paths-ignore:
+      - '**/*.md'
+      - '**/*.mdx'
+      - '**/docs/**'
+  pull_request:
+    branches: [main, develop]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: false
+        default: 'test'
+        type: choice
+        options:
+        - test
+        - staging
+        - production
+
+# Set default environment variables
+env:
+  NODE_VERSION: '20'
+  SOLIDITY_VERSION: '0.8.20'
+  AWS_REGION: 'us-west-2'
+  ECR_REPOSITORY: 'gamedin'
+  DOCKER_BUILDKIT: 1
+  COMPOSE_DOCKER_CLI_BUILD: 1
+  DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+  DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+  
+# These permissions are needed for OIDC authentication
+permissions:
+  id-token: write
+  contents: read
+  packages: write
+
+jobs:
+  # Lint and test the codebase
+  test:
+    name: Test and Lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    
+    services:
+      hardhat-node:
+        image: ethereumoptimism/hardhat-node:latest
+        ports:
+          - 8545:8545
+        options: >-
+          --health-cmd "curl http://localhost:8545"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        env:
+          CHAIN_ID: 31337
+          FORK_URL: ${{ secrets.FORK_URL }}
+
+    strategy:
+      matrix:
+        node-version: ['20.x']
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Setup Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+
+    - name: Cache dependencies
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.npm
+          ~/.cache/hardhat-nodejs
+          ~/.cache/hardhat-network
+          **/node_modules
+        key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+
+    - name: Install Dependencies
+      run: |
+        npm ci --prefer-offline
+        npm install -g hardhat@latest
+
+    - name: Run Security Audit
+      run: npm audit --production
+      continue-on-error: true  # Warn but don't fail on vulnerabilities
+
+    - name: Lint and Format
+      run: |
+        npm run lint
+        npm run format:check
+
+    - name: Run Unit Tests
+      run: |
+        npx hardhat compile
+        npx hardhat coverage --network hardhat
+        npx hardhat test --network hardhat
+
+    - name: Run Integration Tests
+      run: |
+        npx hardhat test test/integration/ --network hardhat
+
+    - name: Upload Coverage
+      uses: codecov/codecov-action@v4
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        fail_ci_if_error: false
+
+  # Build and test the frontend
+  frontend:
+    name: Frontend Build
+    needs: test
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js ${{ env.NODE_VERSION }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+
+    - name: Install Dependencies
+      working-directory: ./gdi-dapp
+      run: npm ci --prefer-offline
+
+    - name: Lint and Type Check
+      working-directory: ./gdi-dapp
+      run: |
+        npm run lint
+        npm run type-check
+
+    - name: Run Tests
+      working-directory: ./gdi-dapp
+      run: npm run test:ci
+
+    - name: Build
+      working-directory: ./gdi-dapp
+      run: npm run build
+
+  # Build and push Docker images
+  build:
+    name: Build and Push Images
+    needs: [test, frontend]
+    if: github.ref != 'refs/pull/*'  # Skip for PRs
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+      with:
+        driver: docker-container
+        driver-opts: network=host
+
+    - name: Login to Docker Hub
+      uses: docker/login-action@v3
+      with:
+        username: ${{ env.DOCKERHUB_USERNAME }}
+        password: ${{ env.DOCKERHUB_TOKEN }}
+
+    - name: Build and push gamedin-dapp
+      uses: docker/build-push-action@v5
+      with:
+        context: ./gdi-dapp
+        push: ${{ github.event_name != 'pull_request' }}
+        tags: ${{ env.DOCKERHUB_USERNAME }}/gamedin-dapp:latest
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+
+    - name: Build and push gamedin-node
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        file: ./Dockerfile.node
+        push: ${{ github.event_name != 'pull_request' }}
+        tags: ${{ env.DOCKERHUB_USERNAME }}/gamedin-node:latest
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+
+  # Deploy to staging environment
+  deploy-staging:
+    name: Deploy to Staging
+    needs: [test, frontend, build]
+    if: (github.ref == 'refs/heads/develop' && github.event_name == 'push') || 
+        (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'staging')
+    runs-on: ubuntu-latest
+    environment: 
+      name: staging
+      url: https://staging.gamedin.xyz
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-region: ${{ env.AWS_REGION }}
+        role-to-assume: ${{ secrets.AWS_ROLE_ARN_STAGING }}
+        role-session-name: GitHubActions-Deploy-Staging
+
+    - name: Login to Amazon ECR
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v2
+
+    - name: Deploy to EKS
+      run: |
+        # Set up kubectl
+        curl -sS https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl -o /usr/local/bin/kubectl
+        chmod +x /usr/local/bin/kubectl
+        
+        # Update kubeconfig
+        aws eks update-kubeconfig \
+          --region ${{ env.AWS_REGION }} \
+          --name gamedin-staging \
+          --kubeconfig /tmp/kubeconfig
+        
+        # Apply Kubernetes manifests
+        kubectl --kubeconfig=/tmp/kubeconfig apply -f k8s/staging/
+        
+        # Wait for rollout
+        kubectl --kubeconfig=/tmp/kubeconfig rollout status deployment/gamedin-dapp -n gamedin-staging --timeout=300s
+        kubectl --kubeconfig=/tmp/kubeconfig rollout status deployment/gamedin-node -n gamedin-staging --timeout=300s
+
+  # Deploy to production environment
+  deploy-production:
+    name: Deploy to Production
+    needs: [deploy-staging]
+    if: (github.ref == 'refs/heads/main' && github.event_name == 'push') || 
+        (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'production')
+    runs-on: ubuntu-latest
+    environment: 
+      name: production
+      url: https://gamedin.xyz
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-region: ${{ env.AWS_REGION }}
+        role-to-assume: ${{ secrets.AWS_ROLE_ARN_PRODUCTION }}
+        role-session-name: GitHubActions-Deploy-Production
+
+    - name: Login to Amazon ECR
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v2
+
+    - name: Deploy to EKS
+      run: |
+        # Set up kubectl
+        curl -sS https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl -o /usr/local/bin/kubectl
+        chmod +x /usr/local/bin/kubectl
+        
+        # Update kubeconfig
+        aws eks update-kubeconfig \
+          --region ${{ env.AWS_REGION }} \
+          --name gamedin-production \
+          --kubeconfig /tmp/kubeconfig
+        
+        # Apply Kubernetes manifests
+        kubectl --kubeconfig=/tmp/kubeconfig apply -f k8s/production/
+        
+        # Wait for rollout
+        kubectl --kubeconfig=/tmp/kubeconfig rollout status deployment/gamedin-dapp -n gamedin-production --timeout=300s
+        kubectl --kubeconfig=/tmp/kubeconfig rollout status deployment/gamedin-node -n gamedin-production --timeout=300s
+
+  # Notify status of the deployment
+  notify:
+    name: Notify Status
+    needs: [deploy-staging, deploy-production]
+    if: always()
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Check deployment status
+      if: needs.deploy-staging.result == 'success' || needs.deploy-production.result == 'success'
+      run: |
+        echo "Deployment successful!"
+        # Add notification logic here (Slack, email, etc.)
+        
+    - name: Notify failure
+      if: needs.deploy-staging.result == 'failure' || needs.deploy-production.result == 'failure'
+      run: |
+        echo "Deployment failed!"
+        # Add failure notification logic here
