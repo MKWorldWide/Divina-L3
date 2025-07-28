@@ -23,12 +23,11 @@ spec:
       hostPID: true
       containers:
         - name: node-exporter
-          image: prom/node-exporter:v1.6.1
+          image: prom/node-exporter:v1.2.2
           args:
             - --path.procfs=/host/proc
             - --path.sysfs=/host/sys
             - --collector.filesystem.ignored-mount-points=^/(sys|proc|dev|host|etc)($|/)
-            - --collector.netdev.ignored-devices=^(veth.*|[a-f0-9]{15})$
           ports:
             - name: http-metrics
               containerPort: 9100
