@@ -50,26 +50,45 @@ jobs:
         node-version: ['20.x']
 
     steps:
+    - name: Install Dependencies
+      run: |
+        echo "Installing dependencies..."
+        npm ci --prefer-offline --no-audit --no-fund
+        echo "Installing Hardhat..."
+        npm install -g hardhat@latest
+        echo "Listing installed packages..."
+        npm list --depth=0
+
     - name: Start Hardhat node
       run: |
         echo "Starting Hardhat node..."
-        npx hardhat node --hostname 0.0.0.0 > /dev/null 2>&1 &
+        npx hardhat node --hostname 0.0.0.0 --port 8545 --network hardhat > /dev/null 2>&1 &
         echo "Waiting for Hardhat node to start..."
-        sleep 5
+        sleep 10  # Give more time for the node to start
         
         # Verify Hardhat node is running
         if ! curl -s -X POST \
           -H "Content-Type: application/json" \
           -d '{"jsonrpc":"2.0","method":"eth_chainId","params":[],"id":1}' \
           http://localhost:8545 > /dev/null; then
-          echo "Failed to start Hardhat node"
+          echo "::error::Failed to start Hardhat node"
+          echo "::group::Debug Info"
+          echo "Processes:"
+          ps aux | grep hardhat
+          echo "Port 8545 status:"
+          lsof -i :8545 || echo "Nothing listening on port 8545"
+          echo "::endgroup::"
           exit 1
         fi
         
         echo "Hardhat node is running"
+        echo "Hardhat node info:"
+        curl -s -X POST -H "Content-Type: application/json" -d '{"jsonrpc":"2.0","method":"web3_clientVersion","params":[],"id":1}' http://localhost:8545
       env:
         FORK_URL: ${{ secrets.FORK_URL || 'https://eth-mainnet.alchemyapi.io/v2/demo' }}
         HARDHAT_NETWORK: 'hardhat'
+        HARDHAT_DEPLOY_FORK: ${{ secrets.FORK_URL || 'https://eth-mainnet.alchemyapi.io/v2/demo' }}
+        HARDHAT_DEPLOY_FORK_BLOCK_NUMBER: 'latest'
     - name: Checkout code
       uses: actions/checkout@v4
       with:
