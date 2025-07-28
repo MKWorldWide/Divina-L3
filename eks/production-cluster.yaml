@@ -1,0 +1,88 @@
+apiVersion: eksctl.io/v1alpha5
+kind: ClusterConfig
+
+metadata:
+  name: gamedin-production
+  region: us-west-2
+  version: "1.28"
+
+vpc:
+  cidr: 10.0.0.0/16
+  clusterEndpoints:
+    publicAccess: true
+    privateAccess: true
+
+managedNodeGroups:
+  - name: standard-workers
+    instanceType: m5.large
+    minSize: 3
+    maxSize: 10
+    desiredCapacity: 3
+    volumeSize: 100
+    privateNetworking: true
+    availabilityZones: ["us-west-2a", "us-west-2b", "us-west-2c"]
+    labels: {role: worker}
+    iam:
+      withAddonPolicies:
+        ebs: true
+        fsx: true
+        efs: true
+        cloudWatch: true
+        autoScaler: true
+        certManager: true
+    tags:
+      k8s.io/cluster-autoscaler/enabled: "true"
+      k8s.io/cluster-autoscaler/gamedin-production: "owned"
+
+iam:
+  withOIDC: true
+  serviceAccounts:
+    - metadata:
+        name: aws-load-balancer-controller
+        namespace: kube-system
+      attachPolicyARNs:
+        - arn:aws:iam::aws:policy/AWSLoadBalancerControllerIAMPolicy
+    - metadata:
+        name: ebs-csi-controller-sa
+        namespace: kube-system
+      attachPolicyARNs:
+        - arn:aws:iam::aws:policy/service-role/AmazonEBSCSIDriverPolicy
+    - metadata:
+        name: external-dns
+        namespace: kube-system
+      attachPolicyARNs:
+        - arn:aws:iam::aws:policy/AmazonRoute53FullAccess
+
+addons:
+  - name: vpc-cni
+    attachPolicyARNs:
+      - arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy
+  - name: coredns
+  - name: kube-proxy
+  - name: aws-ebs-csi-driver
+    serviceAccountRoleARN: arn:aws:iam::${AWS_ACCOUNT_ID}:role/AmazonEKS_EBS_CSI_DriverRole
+
+cloudWatch:
+  clusterLogging:
+    enableTypes: ["api", "audit", "authenticator", "controllerManager", "scheduler"]
+    logRetentionInDays: 90
+
+karpenter:
+  version: v0.28.0
+  instanceProfileName: KarpenterNodeInstanceProfile-gamedin-production
+  iam:
+    withAddonPolicies:
+      cloudWatch: true
+      ebs: true
+      fsx: true
+      efs: true
+      albIngress: true
+      certManager: true
+      autoScaler: true
+      externalDNS: true
+      awsLoadBalancerController: true
+      xRay: true
+      cloudWatchLogs: true
+      appMesh: true
+      appMeshPreview: true
+      ebsCSIController: true
