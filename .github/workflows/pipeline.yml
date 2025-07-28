@@ -47,7 +47,7 @@ jobs:
     
     services:
       hardhat-node:
-        image: ethereumoptimism/hardhat:2.0.0
+        image: ghcr.io/nomicfoundation/hardhat-node:latest
         ports:
           - 8545:8545
         options: >-
