@@ -3,17 +3,54 @@ kind: Kustomization
 
 namespace: staging
 
+# Include all necessary resources
 resources:
+  - namespace.yaml
   - deployments/gamedin-dapp.yaml
   - services/gamedin-dapp.yaml
   - deployments/gamedin-node.yaml
   - services/gamedin-node.yaml
   - ingress/gamedin-ingress.yaml
 
+# Configure image overrides
 images:
   - name: gamedin-dapp
     newName: ${ECR_REGISTRY}/gamedin/staging/dapp
-    newTag: ${IMAGE_TAG}
+    newTag: ${IMAGE_TAG:-latest}
   - name: gamedin-node
     newName: ${ECR_REGISTRY}/gamedin/staging/node
-    newTag: ${IMAGE_TAG}
+    newTag: ${IMAGE_TAG:-latest}
+
+# Add common labels to all resources
+commonLabels:
+  app.kubernetes.io/part-of: gamedin
+  app.kubernetes.io/environment: staging
+  app.kubernetes.io/managed-by: kustomize
+
+# Configure name prefix and suffix
+namePrefix: ""
+nameSuffix: ""
+
+# Configure the namespace
+namespace: staging
+
+# Add common annotations to all resources
+commonAnnotations:
+  kustomize.toolkit.fluxcd.io/checksum: ${KUSTOMIZE_CHECKSUM}
+  fluxcd.io/automated: "true"
+  
+# Configure secret and configmap generator if needed
+# secretGenerator:
+# - name: gamedin-secrets
+#   namespace: staging
+#   literals:
+#     - DB_PASSWORD=${DB_PASSWORD}
+#     - API_KEY=${API_KEY}
+#   type: Opaque
+
+# configMapGenerator:
+# - name: gamedin-config
+#   namespace: staging
+#   literals:
+#     - NODE_ENV=staging
+#     - API_URL=${API_URL}

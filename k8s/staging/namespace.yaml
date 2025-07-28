@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: gamedin-staging
+  labels:
+    name: gamedin-staging
+    environment: staging
