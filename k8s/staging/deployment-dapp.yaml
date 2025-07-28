@@ -37,26 +37,31 @@ spec:
     spec:
       containers:
       - name: gamedin-dapp
-        image: public.ecr.aws/docker/library/nginx:latest
+        image: ${ECR_REGISTRY}/gamedin-dapp:${IMAGE_TAG:-latest}
         imagePullPolicy: Always
         ports:
-        - containerPort: 80
+        - containerPort: 3000
           name: http
           protocol: TCP
+        envFrom:
+        - configMapRef:
+            name: gamedin-config
+        - secretRef:
+            name: gamedin-secrets
         livenessProbe:
           httpGet:
-            path: /
-            port: 80
+            path: /health
+            port: 3000
             scheme: HTTP
           initialDelaySeconds: 30
           periodSeconds: 10
-          timeoutSeconds: 1
+          timeoutSeconds: 5
           successThreshold: 1
           failureThreshold: 3
         readinessProbe:
           httpGet:
-            path: /
-            port: 80
+            path: /health
+            port: 3000
             scheme: HTTP
           initialDelaySeconds: 5
           periodSeconds: 5
@@ -65,10 +70,14 @@ spec:
           failureThreshold: 3
         resources:
           limits:
-            cpu: 500m
-            memory: 1Gi
+            cpu: 1000m
+            memory: 1.5Gi
           requests:
-            cpu: 100m
-            memory: 256Mi
+            cpu: 200m
+            memory: 512Mi
+        lifecycle:
+          preStop:
+            exec:
+              command: ["/bin/sh", "-c", "sleep 30"]
       imagePullSecrets:
       - name: ecr-credentials

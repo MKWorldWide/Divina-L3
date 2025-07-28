@@ -3,9 +3,43 @@ kind: ConfigMap
 metadata:
   name: gamedin-config
   namespace: staging
+  labels:
+    app.kubernetes.io/environment: staging
+    app.kubernetes.io/managed-by: kustomize
+    app.kubernetes.io/part-of: gamedin
 data:
+  # Application Environment
   NODE_ENV: "staging"
-  API_URL: "http://gamedin-node:8545"
-  WS_URL: "ws://gamedin-node:8545"
-  CHAIN_ID: "1337"
-  NETWORK_NAME: "gamedin-staging"
+  
+  # API Configuration
+  API_URL: "https://api.staging.gamedin.xyz"
+  WS_URL: "wss://api.staging.gamedin.xyz/ws"
+  
+  # Blockchain Configuration
+  CHAIN_ID: "5"  # Goerli testnet
+  NETWORK_NAME: "goerli"
+  
+  # Feature Flags
+  ENABLE_ANALYTICS: "true"
+  ENABLE_MAINTENANCE_MODE: "false"
+  
+  # Performance
+  CACHE_TTL: "3600"
+  RATE_LIMIT_WINDOW_MS: "900000"
+  RATE_LIMIT_MAX: "100"
+  
+  # External Services
+  SENTRY_DSN: ""  # Add your Sentry DSN here
+  GA_TRACKING_ID: ""  # Add your Google Analytics ID here
+  
+  # UI Configuration
+  THEME: "dark"
+  DEFAULT_LOCALE: "en-US"
+  
+  # Game Configuration
+  MAX_PLAYERS: "100"
+  SESSION_TIMEOUT_MINUTES: "30"
+  
+  # Logging
+  LOG_LEVEL: "debug"
+  ENABLE_REQUEST_LOGGING: "true"
