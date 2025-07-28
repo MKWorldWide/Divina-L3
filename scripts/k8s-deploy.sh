@@ -61,18 +61,28 @@ if [ -n "${AWS_REGION}" ] && [ -n "${EKS_CLUSTER_NAME}" ]; then
   # Set context namespace
   KUBECONFIG="${KUBE_CONFIG}" kubectl config set-context --current --namespace="${NAMESPACE}"
   
+  # Setup secrets
+  echo "Setting up secrets..."
+  ./scripts/setup-k8s-secrets.sh "${ENVIRONMENT}"
+  
   # Deploy Kubernetes manifests
   echo "Deploying Kubernetes manifests..."
   KUBECONFIG="${KUBE_CONFIG}" kubectl apply -f "k8s/${ENVIRONMENT}/"
   
   # Wait for deployments to be ready
   echo "Waiting for deployments to be ready..."
-  KUBECONFIG="${KUBE_CONFIG}" kubectl wait --for=condition=available \
-    --timeout=300s \
-    -n "${NAMESPACE}" \
-    deployment/gamedin-dapp \
-    deployment/gamedin-node
-    
+  for DEPLOYMENT in $(KUBECONFIG="${KUBE_CONFIG}" kubectl get deployments -n "${NAMESPACE}" -o name); do
+    echo "Waiting for ${DEPLOYMENT}..."
+    KUBECONFIG="${KUBE_CONFIG}" kubectl rollout status "${DEPLOYMENT}" -n "${NAMESPACE}" --timeout=300s
+    if [ $? -ne 0 ]; then
+      echo "Error: ${DEPLOYMENT} deployment failed"
+      echo "Debugging information:"
+      KUBECONFIG="${KUBE_CONFIG}" kubectl describe "${DEPLOYMENT}" -n "${NAMESPACE}"
+      KUBECONFIG="${KUBE_CONFIG}" kubectl logs "${DEPLOYMENT}" -n "${NAMESPACE}" --tail=50
+      exit 1
+    fi
+  done
+  
   # Show deployment status
   echo "Deployment status:"
   KUBECONFIG="${KUBE_CONFIG}" kubectl get all -n "${NAMESPACE}"
