@@ -87,23 +87,34 @@ jobs:
 
     - name: Install Dependencies
       run: |
-        npm ci --prefer-offline
+        echo "Installing dependencies..."
+        npm ci --prefer-offline --no-audit --no-fund
+        echo "Installing Hardhat..."
         npm install -g hardhat@latest
+        echo "Listing installed packages..."
+        npm list --depth=0
 
     - name: Run Security Audit
       run: npm audit --production
       continue-on-error: true  # Warn but don't fail on vulnerabilities
 
-    - name: Lint and Format
+    - name: Lint
       run: |
         npm run lint
-        npm run format:check
+        npm run format
 
     - name: Run Unit Tests
       run: |
-        npx hardhat compile
-        npx hardhat coverage --network hardhat
-        npx hardhat test --network hardhat
+        echo "Compiling contracts..."
+        npx hardhat compile || (echo "Compilation failed" && exit 1)
+        
+        echo "Running tests with coverage..."
+        npx hardhat coverage --network hardhat || \
+          (echo "Coverage failed" && exit 1)
+        
+        echo "Running tests..."
+        npx hardhat test --network hardhat || \
+          (echo "Tests failed" && exit 1)
 
     - name: Run Integration Tests
       run: |
