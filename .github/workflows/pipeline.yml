@@ -45,29 +45,31 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     
-    services:
-      hardhat-node:
-        image: ghcr.io/nomicfoundation/hardhat-node:latest
-        ports:
-          - 8545:8545
-        options: >-
-          --health-cmd "curl -s -X POST -H \"Content-Type: application/json\" -d '{\"jsonrpc\":\"2.0\",\"method\":\"eth_chainId\",\"params\":[],\"id\":1}' http://localhost:8545"
-          --health-interval 10s
-          --health-timeout 10s
-          --health-retries 5
-          --health-start-period 10s
-        env:
-          CHAIN_ID: '31337'
-          FORK_URL: ${{ secrets.FORK_URL || 'https://eth-mainnet.alchemyapi.io/v2/demo' }}
-          HARDHAT_NETWORK: 'hardhat'
-          HARDHAT_DEPLOY_FORK: ${{ secrets.FORK_URL || 'https://eth-mainnet.alchemyapi.io/v2/demo' }}
-          HARDHAT_DEPLOY_FORK_BLOCK_NUMBER: 'latest'
-
     strategy:
       matrix:
         node-version: ['20.x']
 
     steps:
+    - name: Start Hardhat node
+      run: |
+        echo "Starting Hardhat node..."
+        npx hardhat node --hostname 0.0.0.0 > /dev/null 2>&1 &
+        echo "Waiting for Hardhat node to start..."
+        sleep 5
+        
+        # Verify Hardhat node is running
+        if ! curl -s -X POST \
+          -H "Content-Type: application/json" \
+          -d '{"jsonrpc":"2.0","method":"eth_chainId","params":[],"id":1}' \
+          http://localhost:8545 > /dev/null; then
+          echo "Failed to start Hardhat node"
+          exit 1
+        fi
+        
+        echo "Hardhat node is running"
+      env:
+        FORK_URL: ${{ secrets.FORK_URL || 'https://eth-mainnet.alchemyapi.io/v2/demo' }}
+        HARDHAT_NETWORK: 'hardhat'
     - name: Checkout code
       uses: actions/checkout@v4
       with:
