@@ -47,19 +47,21 @@ jobs:
     
     services:
       hardhat-node:
-        image: ethereumoptimism/hardhat-node:2.0.0
+        image: ethereumoptimism/hardhat:2.0.0
         ports:
           - 8545:8545
         options: >-
-          --health-cmd "curl -s http://localhost:8545"
+          --health-cmd "curl -s -X POST -H \"Content-Type: application/json\" -d '{\"jsonrpc\":\"2.0\",\"method\":\"eth_chainId\",\"params\":[],\"id\":1}' http://localhost:8545"
           --health-interval 10s
           --health-timeout 10s
-          --health-retries 10
+          --health-retries 5
           --health-start-period 10s
         env:
           CHAIN_ID: '31337'
           FORK_URL: ${{ secrets.FORK_URL || 'https://eth-mainnet.alchemyapi.io/v2/demo' }}
           HARDHAT_NETWORK: 'hardhat'
+          HARDHAT_DEPLOY_FORK: ${{ secrets.FORK_URL || 'https://eth-mainnet.alchemyapi.io/v2/demo' }}
+          HARDHAT_DEPLOY_FORK_BLOCK_NUMBER: 'latest'
 
     strategy:
       matrix:
