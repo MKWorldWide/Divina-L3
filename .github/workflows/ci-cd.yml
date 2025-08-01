@@ -1,24 +1,23 @@
+---
 name: GameDin L3 CI/CD
 
-on:
+"on":
   push:
-    branches: [ main, develop, feature/** ]
+    branches: [main, develop, "feature/**"]
     paths-ignore:
       - '**/*.md'
       - '**/*.mdx'
       - '**/docs/**'
   pull_request:
-    branches: [ main, develop ]
+    branches: [main, develop]
   workflow_dispatch:
   schedule:
-    - cron: '0 0 * * 0'  # Weekly security scans
+    - cron: '0 0 * * 0'
 
 env:
   NODE_VERSION: '20'
-  SOLIDITY_VERSION: '0.8.20'
-  GO_VERSION: '1.21'
-  TF_VERSION: '1.5.0'
   AWS_REGION: 'us-west-2'
+  TF_VERSION: '1.5.0'
   DOCKER_BUILDKIT: 1
   COMPOSE_DOCKER_CLI_BUILD: 1
 
@@ -36,62 +35,49 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
-
     strategy:
       matrix:
         node-version: [18.x, 20.x]
-
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
-      with:
-        fetch-depth: 0
-
-    - name: Setup Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v3
-      with:
-        node-version: ${{ matrix.node-version }}
-        cache: 'npm'
-
-    - name: Cache dependencies
-      uses: actions/cache@v3
-      with:
-        path: |
-          ~/.npm
-          ~/.cache/hardhat-nodejs
-          ~/.cache/hardhat-network
-          **/node_modules
-        key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
-
-    - name: Install Dependencies
-      run: |
-        npm ci --prefer-offline
-        npm install -g hardhat@latest
-
-    - name: Run Security Audit
-      run: npm audit --production
-      continue-on-error: true  # Warn but don't fail on vulnerabilities
-
-    - name: Lint and Format
-      run: |
-        npm run lint
-        npm run format:check
-
-    - name: Run Unit Tests
-      run: |
-        npx hardhat compile
-        npx hardhat coverage --network hardhat
-        npx hardhat test --network hardhat
-
-    - name: Run Integration Tests
-      run: |
-        npx hardhat test test/integration/ --network hardhat
-
-    - name: Upload Coverage
-      uses: codecov/codecov-action@v3
-      with:
-        token: ${{ secrets.CODECOV_TOKEN }}
-        fail_ci_if_error: false
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+      - name: Cache dependencies
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.npm
+            ~/.cache/hardhat-nodejs
+            ~/.cache/hardhat-network
+            **/node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+      - name: Install Dependencies
+        run: |
+          npm ci --prefer-offline
+          npm install -g hardhat@latest
+      - name: Lint and Format
+        run: |
+          npm run lint
+          npm run format:check
+      - name: Run Unit Tests
+        run: |
+          npx hardhat compile
+          npx hardhat coverage --network hardhat
+          npx hardhat test --network hardhat
+      - name: Run Integration Tests
+        run: |
+          npx hardhat test test/integration/ --network hardhat
+      - name: Upload Coverage
+        uses: codecov/codecov-action@v3
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: false
 
   build:
     name: Build and Package
@@ -100,125 +86,98 @@ jobs:
     env:
       NODE_ENV: production
       NEXT_TELEMETRY_DISABLED: 1
-
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
-
-    - name: Setup Node.js
-      uses: actions/setup-node@v3
-      with:
-        node-version: ${{ env.NODE_VERSION }}
-        cache: 'npm'
-
-    - name: Cache dependencies
-      uses: actions/cache@v3
-      with:
-        path: |
-          ~/.npm
-          ~/.cache/hardhat-nodejs
-          ~/.cache/hardhat-network
-          **/node_modules
-        key: ${{ runner.os }}-build-${{ hashFiles('**/package-lock.json') }}
-
-    - name: Install Dependencies
-      run: |
-        npm ci --prefer-offline
-
-    - name: Build Contracts
-      run: |
-        npx hardhat compile
-        npx typechain --target ethers-v6 --out-dir typechain-types 'artifacts/contracts/**/!(*.dbg).json'
-
-    - name: Build Frontend
-      working-directory: ./gdi-dapp
-      run: |
-        npm ci --prefer-offline
-        npm run build
-
-    - name: Build Docker Images
-      run: |
-        docker build -t gamedin-dapp:latest -f gdi-dapp/Dockerfile .
-        docker build -t gamedin-node:latest -f Dockerfile.node .
-
-    - name: Save Docker Images
-      if: github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/main'
-      run: |
-        mkdir -p ~/docker
-        docker save gamedin-dapp:latest -o ~/docker/gamedin-dapp.tar
-        docker save gamedin-node:latest -o ~/docker/gamedin-node.tar
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+      - name: Cache dependencies
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.npm
+            ~/.cache/hardhat-nodejs
+            ~/.cache/hardhat-network
+            **/node_modules
+          key: ${{ runner.os }}-build-${{ hashFiles('**/package-lock.json') }}
+      - name: Install Dependencies
+        run: npm ci --prefer-offline
+      - name: Build Contracts
+        run: |
+          npx hardhat compile
+          npx typechain --target ethers-v6 --out-dir typechain-types 'artifacts/contracts/**/!(*.dbg).json'
+      - name: Build Frontend
+        working-directory: ./gdi-dapp
+        run: |
+          npm ci --prefer-offline
+          npm run build
+      - name: Build Docker Images
+        run: |
+          docker build -t gamedin-dapp:latest -f gdi-dapp/Dockerfile .
+          docker build -t gamedin-node:latest -f Dockerfile.node .
+      - name: Save Docker Images
+        if: github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/main'
+        run: |
+          mkdir -p ~/docker
+          docker save gamedin-dapp:latest -o ~/docker/gamedin-dapp.tar
+          docker save gamedin-node:latest -o ~/docker/gamedin-node.tar
 
   deploy-staging:
     name: Deploy to Staging
     needs: [test, build]
     if: github.ref == 'refs/heads/develop' && github.event_name == 'push'
     runs-on: ubuntu-latest
-    environment: 
+    environment:
       name: staging
       url: https://staging.gamedin.xyz
-
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
-
-    - name: Configure AWS Credentials
-      uses: aws-actions/configure-aws-credentials@v2
-      with:
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: ${{ env.AWS_REGION }}
-
-    - name: Login to Amazon ECR
-      id: login-ecr
-      uses: aws-actions/amazon-ecr-login@v1
-
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v2
-
-    - name: Build and push Docker images
-      env:
-        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-        ECR_REPOSITORY: gamedin/staging
-        IMAGE_TAG: ${{ github.sha }}
-      run: |
-        docker load -i ~/docker/gamedin-dapp.tar
-        docker load -i ~/docker/gamedin-node.tar
-        
-        # Tag and push images
-        docker tag gamedin-dapp:latest $ECR_REGISTRY/$ECR_REPOSITORY/dapp:$IMAGE_TAG
-        docker tag gamedin-node:latest $ECR_REGISTRY/$ECR_REPOSITORY/node:$IMAGE_TAG
-        
-        docker push $ECR_REGISTRY/$ECR_REPOSITORY/dapp:$IMAGE_TAG
-        docker push $ECR_REGISTRY/$ECR_REPOSITORY/node:$IMAGE_TAG
-
-    - name: Deploy to EKS
-      env:
-        KUBE_CONFIG_DATA: ${{ secrets.KUBE_CONFIG_STAGING }}
-        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-        IMAGE_TAG: ${{ github.sha }}
-        ENVIRONMENT: staging
-      run: |
-        mkdir -p ~/.kube
-        echo "$KUBE_CONFIG_DATA" | base64 -d > ~/.kube/config
-        
-        # Update kubeconfig
-        aws eks --region $AWS_REGION update-kubeconfig --name gamedin-staging-cluster
-        
-        # Deploy using our script
-        cd k8s/staging
-        ../../scripts/deploy-k8s.sh
-        
-        # Verify deployment
-        kubectl get pods -n staging
-        kubectl get svc -n staging
-
-    - name: Verify Deployment
-      run: |
-        kubectl get pods -n staging
-        kubectl get svc -n staging
-        
-        # Basic health check
-        curl -sSf https://staging.gamedin.xyz/health
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      - name: Build and push Docker images
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: gamedin/staging
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker load -i ~/docker/gamedin-dapp.tar
+          docker load -i ~/docker/gamedin-node.tar
+          docker tag gamedin-dapp:latest $ECR_REGISTRY/$ECR_REPOSITORY/dapp:$IMAGE_TAG
+          docker tag gamedin-node:latest $ECR_REGISTRY/$ECR_REPOSITORY/node:$IMAGE_TAG
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY/dapp:$IMAGE_TAG
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY/node:$IMAGE_TAG
+      - name: Deploy to EKS
+        env:
+          KUBE_CONFIG_DATA: ${{ secrets.KUBE_CONFIG_STAGING }}
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+          ENVIRONMENT: staging
+        run: |
+          mkdir -p ~/.kube
+          echo "$KUBE_CONFIG_DATA" | base64 -d > ~/.kube/config
+          aws eks --region $AWS_REGION update-kubeconfig --name gamedin-staging-cluster
+          cd k8s/staging
+          ../../scripts/deploy-k8s.sh
+          kubectl get pods -n staging
+          kubectl get svc -n staging
+      - name: Verify Deployment
+        run: |
+          kubectl get pods -n staging
+          kubectl get svc -n staging
+          curl -sSf https://staging.gamedin.xyz/health
 
   deploy-production:
     name: Deploy to Production
@@ -228,74 +187,28 @@ jobs:
     environment:
       name: production
       url: https://gamedin.xyz
-
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
-
-    - name: Configure AWS Credentials
-      uses: aws-actions/configure-aws-credentials@v2
-      with:
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: ${{ env.AWS_REGION }}
-
-    - name: Login to Amazon ECR
-      id: login-ecr
-      uses: aws-actions/amazon-ecr-login@v1
-
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v2
-
-    - name: Promote Staging Images to Production
-      env:
-        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-        ECR_REPOSITORY: gamedin/production
-        IMAGE_TAG: ${{ github.sha }}
-      run: |
-        # Pull staging images
-        docker pull $ECR_REGISTRY/gamedin/staging/dapp:$IMAGE_TAG
-        docker pull $ECR_REGISTRY/gamedin/staging/node:$IMAGE_TAG
-        
-        # Tag for production
-        docker tag $ECR_REGISTRY/gamedin/staging/dapp:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY/dapp:$IMAGE_TAG
-        docker tag $ECR_REGISTRY/gamedin/staging/node:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY/node:$IMAGE_TAG
-        
-        # Push to production
-        docker push $ECR_REGISTRY/$ECR_REPOSITORY/dapp:$IMAGE_TAG
-        docker push $ECR_REGISTRY/$ECR_REPOSITORY/node:$IMAGE_TAG
-
-    - name: Deploy to EKS Production
-      env:
-        KUBE_CONFIG_DATA: ${{ secrets.KUBE_CONFIG_PRODUCTION }}
-        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-        IMAGE_TAG: ${{ github.sha }}
-        ENVIRONMENT: production
-      run: |
-        mkdir -p ~/.kube
-        echo "$KUBE_CONFIG_DATA" | base64 -d > ~/.kube/config
-        
-        # Update kubeconfig
-        aws eks --region $AWS_REGION update-kubeconfig --name gamedin-production-cluster
-        
-        # Deploy using our script
-        cd k8s/production
-        ../../scripts/deploy-k8s.sh
-        
-        # Verify deployment
-        kubectl get pods -n production
-        kubectl get svc -n production
-
-    - name: Verify Deployment
-      run: |
-        kubectl get pods -n production
-        kubectl get svc -n production
-        
-        # Basic health check
-        curl -sSf https://gamedin.xyz/health
-        
-        # Run smoke tests
-        npm run test:smoke
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+      - name: Terraform Init
+        run: |
+          cd terraform
+          terraform init -backend-config="bucket=gamedin-l3-terraform-state"
+            -backend-config="key=production/terraform.tfstate"
+      - name: Terraform Apply
+        run: |
+          cd terraform
+          terraform apply -auto-approve -var="environment=production"
 
   notify:
     name: Notify Status
@@ -303,65 +216,15 @@ jobs:
     if: always()
     runs-on: ubuntu-latest
     steps:
-    - name: Send Slack Notification
-      uses: rtCamp/action-slack-notify@v2
-      env:
-        SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
-        SLACK_COLOR: ${{ contains(needs.*.result, 'failure') && 'danger' || 'good' }}
-        SLACK_TITLE: 'Deployment ${{ contains(needs.*.result, 'failure') && 'Failed' || 'Succeeded' }}'
-        SLACK_MESSAGE: |
-          *Workflow*: ${{ github.workflow }}
-          *Commit*: <${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}|${GITHUB_SHA:0:7}>
-          *Environment*: ${{ github.ref_name }}
-          *Status*: ${{ contains(needs.*.result, 'failure') && '❌ Failed' || '✅ Succeeded' }}
-          *Run URL*: <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Run>
-
-    - name: Setup Terraform
-      uses: hashicorp/setup-terraform@v2
-      with:
-        terraform_version: ${{ env.TF_VERSION }}
-
-    - name: Terraform Init
-      run: |
-        cd terraform
-        terraform init -backend-config="bucket=gamedin-l3-terraform-state" \
-                      -backend-config="key=staging/terraform.tfstate"
-
-    - name: Terraform Apply
-      run: |
-        cd terraform
-        terraform apply -auto-approve -var="environment=staging"
-
-  deploy-production:
-    name: Deploy to Production
-    needs: [test, build, deploy-staging]
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    runs-on: ubuntu-latest
-    environment: production
-
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
-
-    - name: Configure AWS Credentials
-      uses: aws-actions/configure-aws-credentials@v2
-      with:
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: ${{ env.AWS_REGION }}
-
-    - name: Setup Terraform
-      uses: hashicorp/setup-terraform@v2
-      with:
-        terraform_version: ${{ env.TF_VERSION }}
-
-    - name: Terraform Init
-      run: |
-        cd terraform
-        terraform init -backend-config="bucket=gamedin-l3-terraform-state" \
-                      -backend-config="key=production/terraform.tfstate"
-
-    - name: Terraform Apply
-      run: |
-        cd terraform
-        terraform apply -auto-approve -var="environment=production"
+      - name: Send Slack Notification
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_COLOR: ${{ contains(needs.*.result, 'failure') && 'danger' || 'good' }}
+          SLACK_TITLE: "Deployment ${{ contains(needs.*.result, 'failure') && 'Failed' || 'Succeeded' }}"
+          SLACK_MESSAGE: |
+            *Workflow*: ${{ github.workflow }}
+            *Commit*: <${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}|${GITHUB_SHA:0:7}>
+            *Environment*: ${{ github.ref_name }}
+            *Status*: ${{ contains(needs.*.result, 'failure') && '❌ Failed' || '✅ Succeeded' }}
+            *Run URL*: <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Run>
