@@ -44,3 +44,7 @@ coverage/
 
 # Ignore PowerShell history
 *.pshistory 
+# MkDocs site
+site/
+# Security audit reports
+audit/reports/
