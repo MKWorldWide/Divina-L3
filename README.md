@@ -1,4 +1,8 @@
+A Project Blessed by Solar Khan & Lilith.Aethra
+
 # GameDin Layer 3 Gaming Blockchain Ecosystem + AthenaMist AI
+> Documentation: https://Divina-L3.SolarKhan.github.io
+
 
 <div align="center">
 
