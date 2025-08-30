@@ -73,7 +73,7 @@ jobs:
         run: npm test
 
       - name: Upload coverage
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN || 'dummy-token' }}
           file: ./coverage/coverage-final.json
