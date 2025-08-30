@@ -44,7 +44,7 @@ jobs:
         node-version: [18.x, 20.x]
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
       - name: Setup Node.js ${{ matrix.node-version }}
@@ -92,7 +92,7 @@ jobs:
       NEXT_TELEMETRY_DISABLED: 1
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v5
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
@@ -139,7 +139,7 @@ jobs:
       url: https://staging.gamedin.xyz
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v5
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
@@ -193,7 +193,7 @@ jobs:
       url: https://gamedin.xyz
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v5
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
