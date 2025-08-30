@@ -56,7 +56,6 @@ jobs:
     strategy:
       matrix:
         node-version: ['20.x']
-        os: [ubuntu-latest]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -76,7 +75,7 @@ jobs:
       - name: Upload coverage
         uses: codecov/codecov-action@v4
         with:
-          token: ${{ secrets.CODECOV_TOKEN }}
+          token: ${{ secrets.CODECOV_TOKEN || 'dummy-token' }}
           file: ./coverage/coverage-final.json
           fail_ci_if_error: false
 
@@ -120,10 +119,10 @@ jobs:
         run: npm audit --production
 
       - name: Run snyk security check
-        if: github.event_name == 'pull_request'
+        if: github.event_name == 'pull_request' && github.repository_owner == 'MKWorldWide'
         uses: snyk/actions/node@master
         env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN || '' }}
         with:
           command: monitor
           args: --severity-threshold=high --strict-out-of-sync=false
@@ -160,49 +159,3 @@ jobs:
           force_orphan: true
           enable_jekyll: false
           commit_message: 'docs: deploy documentation [skip ci]'
-        working-directory: ./gdi-dapp
-        run: npm ci
-
-      - name: Run linting
-        working-directory: ./gdi-dapp
-        run: npx eslint 'src/**/*.{js,jsx,ts,tsx}' --quiet
-
-      - name: Run tests
-        working-directory: ./gdi-dapp
-        run: CI=true npm test -- --watchAll=false --coverage
-
-      - name: Upload coverage report
-        uses: actions/upload-artifact@v3
-        with:
-          name: coverage-report
-          path: gdi-dapp/coverage/lcov.info
-
-  build:
-    name: Build
-    needs: test
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
-
-      - name: Cache npm modules
-        uses: actions/cache@v3
-        with:
-          path: ~/.npm
-          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-node-
-
-      - name: Use Node.js 18.x
-        uses: actions/setup-node@v3
-        with:
-          node-version: 18.x
-          cache: 'npm'
-
-      - name: Install dependencies
-        working-directory: ./gdi-dapp
-        run: npm ci
-
-      - name: Build application
-        working-directory: ./gdi-dapp
-        run: npm run build
